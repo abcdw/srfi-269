@@ -66,7 +66,7 @@ will not appear in the final SRFI.</p>
   <li>assert used as a noun and means a thunked entity, that can be run.
   assertion on the other hand is used inside runners and reporters as "a
   result of assert execution".  AFAIK, assert is not a real noun in
-  english, it's a jargon/slang.</li>
+  English, it's a jargon/slang.</li>
 
   <li>Suite thunk must be discoverable, it can be implemented as a lambda,
   which when called with extra argument 'suite-thunk? returns #t. or
@@ -656,7 +656,7 @@ of <code>suite</code>.  It constructs the same suite entity
 but <em>does not</em> immediately send it to the test runner.
 Instead, it returns a thunk that, when invoked, sends
 the <code>runner/load-suite</code> message.  The returned thunk should
-carry the information or be registered in some registery to make
+carry the information or be registered in some registry to make
 the <code>suite-thunk?</code> predicate return <code>#t</code> on
 it.</p>
 
@@ -918,4 +918,3 @@ this specification.
   <hr>
   <address>Editor: <a href="mailto:srfi-editors+at+srfi+dot+schemers+dot+org">Arthur A. Gleckler</a></address>
 </body></html>
-
