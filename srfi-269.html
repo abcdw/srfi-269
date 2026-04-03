@@ -36,51 +36,52 @@ primitives: the universal <code>is</code> macro for
 assertions, <code>test</code> for grouping assertions into
 independently executable units, and <code>suite</code> for organizing
 tests into hierarchies.  Tests and suites can carry user-provided
-metadata to adjust the behavior of a test runner, for example, to
+metadata to adjust the behavior of a test runner, for example to
 select tests by tags or to enforce timeout values.  The API is tiny,
 yet capable and flexible.  By focusing on the definition and leaving
 execution semantics to test runners, this SRFI offers a common ground
 that can reduce fragmentation among testing libraries.</p>
 
-<p>Unlike side-effect-driven testing frameworks (e.g.&nbsp;SRFI-64),
+<p>Unlike side-effect-driven testing frameworks (e.g.&nbsp;<a href="https://srfi.schemers.org/srfi-64/">SRFI 64</a>),
 this API produces first-class runtime entities, making it easy to
 filter, schedule, wrap them in exception guards and continuation
 barriers, run in arbitrary order, and re-run dynamically generated
 test subsets.  In addition to the usual CLI test runners, it enables
 runtime-friendly test runners that integrate well with highly
 interactive development workflows inside REPLs and IDEs, significantly
-increasing control over test execution and shortening the feedback
+increasing control over test execution, and shortening the feedback
 loop.</p>
 
 <p>To bridge the test definitions and test runners, the SRFI specifies
-a message-passing programming interface, and test loading and
+a message-passing programming interface and test loading and
 execution semantics recommendations for test runner implementers.</p>
 
 
 <h2 id="issues">Issues</h2>
 
-<p>??? Optional section that may point out things to be resolved.  This
-will not appear in the final SRFI.</p>
-
 <ul>
-  <li>define-suite actually has to be called define-suite-thunk or have
-  parenthesis similar to usual define (define-suite (site-name) ...).</li>
+  <li><code>define-suite</code> actually has to be
+  called <code>define-suite-thunk</code> or have parentheses similar
+  to the usual <code>define</code>, i.e. <code>(define-suite
+  (site-name) ...)</code>.</li>
 
-  <li>assert used as a noun and means a thunked entity, that can be run.
-  assertion on the other hand is used inside runners and reporters as "a
-  result of assert execution".  AFAIK, assert is not a real noun in
-  English, it's a jargon/slang.</li>
+  <li><code>assert</code> used as a noun and means a thunked entity,
+  that can be run.  <code>assertion</code>, on the other hand, is used
+  inside runners and reporters as "a result of assert execution."
+  AFAIK, <code>assert</code> is not a real noun in English, it's
+  jargon/slang.</li>
 
-  <li>Suite thunk must be discoverable, it can be implemented as a lambda,
-  which when called with extra argument 'suite-thunk? returns #t. or
-  global registry</li>
+  <li>Suite thunk must be discoverable, it can be implemented as a
+  lambda, which, when called with the extra
+  argument <code>'suite-thunk?</code>, returns <code>#t</code> or
+  a global registry</li>
 </ul>
 
 <h2 id="rationale">Rationale</h2>
 
 <p>Most of the Scheme libraries and applications benefit from tests,
 and most of test suites benefit from portability.
-<a href="https://srfi.schemers.org/srfi-64/srfi-64.html">SRFI-64</a>
+<a href="https://srfi.schemers.org/srfi-64/srfi-64.html">SRFI 64</a>
 (2005) was a valuable first step toward a common testing API, and its
 widespread adoption demonstrates the need.  Yet the Scheme ecosystem
 remains fragmented: implementations maintain their own incompatible
@@ -89,24 +90,24 @@ testing libraries
 Chicken's <a href="https://wiki.call-cc.org/eggref/5/test"><code>test</code>
 egg</a>,
 Chibi's <a href="https://synthcode.com/scheme/chibi/lib/chibi/test.html"><code>(chibi
-test)</code></a>, numerous ad-hoc solutions), each with its own
+test)</code></a>, numerous ad hoc solutions), each with its own
 terminology and conventions.  There is no shared vocabulary for what
 "assertion," "test," and "test suite" mean, making it difficult to
-write portable tests and nearly impossible to build portable testing
+write portable tests, and nearly impossible to build portable testing
 tools.</p>
 
-<p>SRFI-64's design couples three distinct concerns: defining tests,
+<p>SRFI 64's design couples three distinct concerns: defining tests,
 executing them, and reporting results.  Writing
 a <code>test-assert</code> form <em>is</em> running it: the assertion
-fires as a side effect at load time and it leads to multiple
+fires as a side effect at load time and that leads to multiple
 consequences.  Tests cannot be defined in one place and run in
 another; the execution strategy cannot be changed without rewriting
 test code; the <code>test-begin</code>/<code>test-end</code> model is
-fragile and provides no first-class grouping.  SRFI-64's own rationale
+fragile and provides no first-class grouping.  SRFI 64's own rationale
 acknowledges this trade-off, noting that the API "may be a little less
 elegant and 'compositional' than using explicit test objects."</p>
 
-<p>Because SRFI-64 tests are imperative side effects rather than
+<p>Because SRFI 64 tests are imperative side effects rather than
 first-class values, they cannot be filtered by tag, reordered, re-run
 as a subset, or inspected programmatically.  The test runner relies on
 global mutable state, making tests non-reentrant and difficult to
@@ -149,7 +150,7 @@ decisions:</p>
 one parameter, three predicates, and one deferred variant.  Yet it
 covers assertions with rich diagnostics, named tests, nested suites,
 user-provided metadata, and deferred composable suite thunks.  This
-SRFI is intended to supersede SRFI-64 for the purpose of test
+SRFI is intended to supersede SRFI 64 for the purpose of test
 definition.  By standardizing what a test <em>is</em> and leaving how
 it is <em>run</em> to test runners, this SRFI provides a stable
 foundation on which future standards for runners, reporters, and
@@ -181,7 +182,7 @@ reporting.</p>
 <p>The definition primitives do not execute tests themselves. Instead,
 each form constructs a first-class <em>entity</em>, an association
 list (alist) that captures the test's body as a thunk, its source
-form, source location, description string, and optional metadata and
+form, source location, description string, and optional metadata, and
 delivers it to the current test runner via a <em>message</em>.  The
 test runner is a procedure stored in the <code>test-runner*</code>
 parameter; it receives messages as alists and is free to execute tests
@@ -261,7 +262,7 @@ implementation.  In this section we set up this common glossary.
   them as slow, or specifying a timeout.</dd>
 
   <dt id="term-source-location">Source location</dt>
-  <dd>An entity, which allows to identify location of the source code,
+  <dd>An entity, which identifies the location of the source code,
   can be an association list with
   keys <code>filename</code>, <code>line</code>,
   and <code>column</code>.</dd>
@@ -285,7 +286,7 @@ implementation.  In this section we set up this common glossary.
 </dl>
 
 <p><code>test-runner*</code> is a
-<a href="https://www.r7rs.org/">parameter object</a> (as defined
+<a href="https://r7rs.org/">parameter object</a> (as defined
 by <code>make-parameter</code>) that holds the current test runner
 procedure.  All definition primitives&mdash;<code>is</code>,
 <code>test</code>, and <code>suite</code>&mdash;deliver their messages
@@ -364,8 +365,8 @@ the entity additionally contains:</p>
   <tbody>
     <tr>
       <td><code>assert/args-thunk</code></td>
-      <td>A thunk that, when called, evaluates each argument and
-      returns them as a list.  This enables a test runner to display
+      <td>A thunk that, when called, evaluates the arguments and
+      returns the values as a list.  This enables a test runner to display
       the actual argument values in a failure report, separately from
       the predicate.</td>
     </tr>
@@ -769,8 +770,8 @@ they are really handy for test runners implementers.
 
 <h2 id="implementation">Implementation</h2>
 
-<p>A sample implementation is a part of suitbl testing library and
-provided as part of
+<p>A sample implementation is a part of the <code>suitbl</code>
+testing library and provided as part of
 the <a href="https://git.sr.ht/~abcdw/guile-ares-rs">guile-ares-rs</a>
 project.  The definitions API is contained in a single module:</p>
 
@@ -880,7 +881,7 @@ systems:</p>
 
 <p>The design of this SRFI was influenced
 by <code>clojure.test</code>'s use first-class test entities and
-its <code>is</code> macro, and by JUnit's test primitives.  SRFI-64
+its <code>is</code> macro, and by JUnit's test primitives.  SRFI 64
 provided the foundation and demonstrated the need for a portable and
 runtime-friendly testing API; this SRFI builds on the lessons learned
 from its adoption.</p>
@@ -888,8 +889,8 @@ from its adoption.</p>
 Thanks to Andrew Kravchuk for showcasing Common Lisp testing
 ecosystem and sharing the experience.
 
-Thanks to NLnet for funding the work on the suitbl testing library and
-this specification.
+Thanks to NLnet for funding the work on the <code>suitbl</code>
+testing library and this specification.
 
 <h2 id="copyright">Copyright</h2>
 <p>&copy; 2025, 2026 Andrew Tropin, Ramin Honary.</p>
