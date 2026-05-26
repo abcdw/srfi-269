@@ -66,12 +66,6 @@ execution semantics recommendations for test runner implementers.</p>
   to the usual <code>define</code>, i.e. <code>(define-suite
   (site-name) ...)</code>.</li>
 
-  <li><code>assert</code> used as a noun and means a thunked entity,
-  that can be run.  <code>assertion</code>, on the other hand, is used
-  inside runners and reporters as "a result of assert execution."
-  AFAIK, <code>assert</code> is not a real noun in English, it's
-  jargon/slang.</li>
-
   <li>Suite thunk must be discoverable, it can be implemented as a
   lambda, which, when called with the extra
   argument <code>'suite-thunk?</code>, returns <code>#t</code> or
@@ -225,7 +219,7 @@ implementation.  In this section we set up this common glossary.
   <dd>An association list that represents an assertion, test, or
   suite.  Entities are the first-class runtime objects that flow from
   definition code to the test runner.  Keys are symbols; their
-  prefixes (<code>assert/</code>, <code>test/</code>,
+  prefixes (<code>assertion/</code>, <code>test/</code>,
   <code>suite/</code>) indicate which kind of entity they belong
   to.</dd>
 
@@ -233,7 +227,7 @@ implementation.  In this section we set up this common glossary.
   <dd>An association list sent to the test runner via
   the <code>test-runner*</code> parameter.  Every message contains at
   least a <code>type</code> key whose value is a symbol identifying
-  the kind of message (e.g.&nbsp;<code>runner/run-assert</code>,
+  the kind of message (e.g.&nbsp;<code>runner/run-assertion</code>,
   <code>runner/load-test</code>, <code>runner/load-suite</code>).  The
   remaining keys carry the entities and any additional context.</dd>
 
@@ -327,7 +321,7 @@ itself or for running tests with alternative reporters.</p>
 <p>The <code>is</code> macro is the sole assertion primitive.  Each
 invocation constructs an <em>assertion entity</em> (an alist) and
 delivers it to the current test runner by sending
-a <code>runner/run-assert</code> message.  The test runner decides
+a <code>runner/run-assertion</code> message.  The test runner decides
 how to execute the assertion and what to do with the result.</p>
 
 <p>The assertion entity always contains the following keys:</p>
@@ -338,17 +332,17 @@ how to execute the assertion and what to do with the result.</p>
   </thead>
   <tbody>
     <tr>
-      <td><code>assert/body-thunk</code></td>
+      <td><code>assertion/body-thunk</code></td>
       <td>A thunk that, when called, evaluates the original
       expression and returns its value.</td>
     </tr>
     <tr>
-      <td><code>assert/body</code></td>
+      <td><code>assertion/body</code></td>
       <td>The source form of the expression as a datum (unevaluated),
       useful for reporting.</td>
     </tr>
     <tr>
-      <td><code>assert/location</code></td>
+      <td><code>assertion/location</code></td>
       <td>An assertion <a href="#term-source-location">source code
       location</a> </td>
     </tr>
@@ -365,7 +359,7 @@ the entity additionally contains:</p>
   </thead>
   <tbody>
     <tr>
-      <td><code>assert/args-thunk</code></td>
+      <td><code>assertion/args-thunk</code></td>
       <td>A thunk that, when called, evaluates the arguments and
       returns the values as a list.  This enables a test runner to display
       the actual argument values in a failure report, separately from
@@ -376,8 +370,8 @@ the entity additionally contains:</p>
 
 <p>The message sent to the test runner has the form:</p>
 
-<pre><code>`((type        . runner/run-assert)
-  (assert      . ,<var>assertion-entity</var>))</code></pre>
+<pre><code>`((type        . runner/run-assertion)
+  (assertion   . ,<var>assertion-entity</var>))</code></pre>
 
 <h4>Return value</h4>
 
@@ -829,7 +823,7 @@ systems:</p>
   implementations can use their own source-location API (e.g.
   <code>syntax-line</code>/<code>syntax-column</code> in Racket, or
   the <code>source-info</code> facility of the host system).  When no
-  source-location API is available, the <code>assert/location</code>,
+  source-location API is available, the <code>assertion/location</code>,
   <code>test/location</code>, and <code>suite/location</code> keys
   may be set to <code>#f</code>.</dd>
 
