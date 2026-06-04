@@ -319,11 +319,17 @@ itself or for running tests with alternative reporters.</p>
   <dd>General form.  Asserts that <var>expression</var> evaluates to a
   true value.</dd>
 
+  <dt><code>(is <var>expression</var> <var>description</var>)</code></dt>
+  <dd>Same, with a human-readable assertion description.</dd>
+
   <dt><code>(is (<var>predicate</var> <var>argument</var> &hellip;))</code></dt>
   <dd>Predicate form.  A special case of the general form where the
   body is a procedure application.  In addition to the general-form
   behavior, this form captures the arguments separately for richer
   failure reporting.</dd>
+
+  <dt><code>(is (<var>predicate</var> <var>argument</var> &hellip;) <var>description</var>)</code></dt>
+  <dd>Predicate form with a human-readable assertion description.</dd>
 </dl>
 
 <h4>Description</h4>
@@ -333,6 +339,12 @@ invocation constructs an <em>assertion entity</em> (an alist) and
 delivers it to the current test runner by sending
 a <code>runner/run-assertion</code> message.  The test runner decides
 how to execute the assertion and what to do with the result.</p>
+
+<p>An optional <var>description</var> expression may be supplied as the
+second argument.  It must evaluate to a string.  The description is
+stored in the assertion entity so reporters can present the domain
+meaning of an assertion in addition to, or instead of, the captured
+source form.</p>
 
 <p>The assertion entity always contains the following keys:</p>
 
@@ -350,6 +362,11 @@ how to execute the assertion and what to do with the result.</p>
       <td><code>assertion/body</code></td>
       <td>The source form of the expression as a datum (unevaluated),
       useful for reporting.</td>
+    </tr>
+    <tr>
+      <td><code>assertion/description</code></td>
+      <td>The human-readable description string, or <code>#f</code> if
+      no description was provided.</td>
     </tr>
     <tr>
       <td><code>assertion/location</code></td>
@@ -403,6 +420,8 @@ to reuse the value returned by <code>is</code> forms:</p>
   macro appears in the predicate position, the separate
   argument-evaluation thunk may capture the arguments out of context,
   leading to unexpected errors at run time.</li>
+  <li>If a <var>description</var> is provided, it must evaluate to a
+  string.</li>
 </ul>
 
 <h4>Examples</h4>
@@ -419,7 +438,18 @@ to reuse the value returned by <code>is</code> forms:</p>
 (is (= 4 (+ 2 2)))
 (is (string=? "hello" (greet "world")))
 (is (even? 14))
-(is (lset= = '(1 2 3) '(3 2 1)))</code></pre>
+(is (lset= = '(1 2 3) '(3 2 1)))
+
+;; Assertion description in a complete test
+(test ("permission inheritance" ctx)
+  (define db (assoc-ref ctx 'db))
+  (define project (create-project! db "srfi-269"))
+  (define user (project-creator project))
+  (define permissions (user-permissions db user project))
+
+  (is (member 'project/admin permissions)
+      "project creator receives administration permission for the project"))
+</code></pre>
 
 
 <h3 id="test-macro">test &mdash; test definition macro</h3>
@@ -818,12 +848,15 @@ portable across Scheme implementations.</p>
 
 <h3>Design notes</h3>
 
-<p>The <code>is</code> macro uses two <code>syntax-case</code>
-clauses: one matches the predicate-application
-shape <code>(<var>pred</var> <var>arg</var>&nbsp;&hellip;)</code> and
-produces both a body thunk and a separate arguments thunk; the other
-matches an arbitrary expression and produces only a body thunk.  Both
-clauses capture the unevaluated source form as a datum.</p>
+<p>The <code>is</code> macro distinguishes two shapes: the
+predicate-application shape
+<code>(<var>pred</var> <var>arg</var>&nbsp;&hellip;)</code>, which
+produces both a body thunk and a separate arguments thunk, and an
+arbitrary expression, which produces only a body thunk.  Both shapes
+accept an optional description expression.  When present, it is
+evaluated and stored under <code>assertion/description</code>;
+otherwise, <code>#f</code> is stored.  Both shapes capture the
+unevaluated source form as a datum.</p>
 
 <p>The <code>test</code> macro parses a leading
 <code>(<var>description</var> <var>context</var>)</code> pair and
