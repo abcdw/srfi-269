@@ -62,13 +62,13 @@ execution semantics recommendations for test runner implementers.</p>
 
 <ul>
   <li><code>define-suite</code> actually has to be
-  called <code>define-suite-thunk</code> or have parentheses similar
+  called <code>define-suite-loader</code> or have parentheses similar
   to the usual <code>define</code>, i.e. <code>(define-suite
   (site-name) ...)</code>.</li>
 
-  <li>Suite thunk must be discoverable, it can be implemented as a
+  <li>Suite loader must be discoverable, it can be implemented as a
   lambda, which, when called with the extra
-  argument <code>'suite-thunk?</code>, returns <code>#t</code> or
+  argument <code>'suite-loader?</code>, returns <code>#t</code> or
   a global registry</li>
 </ul>
 
@@ -135,7 +135,7 @@ decisions:</p>
   are data, runners can filter by metadata, reorder, wrap each test in
   exception guards or continuation barriers, enforce timeouts, and
   re-run arbitrary subsets without changing a single line of test
-  definition code.  Suite thunks are composable procedures that can be
+  definition code.  Suite loaders are composable procedures that can be
   stored, exported, and combined.  The <code>is</code> macro captures
   both the unevaluated source form and a separate argument thunk,
   enabling rich failure diagnostics.  The result is an API that is
@@ -145,7 +145,7 @@ decisions:</p>
 <p>The API surface is deliberately minimal: three definition forms,
 one parameter, three predicates, and one deferred variant.  Yet it
 covers assertions with rich diagnostics, named tests, nested suites,
-user-provided metadata, and deferred composable suite thunks.  This
+user-provided metadata, and deferred composable suite loaders.  This
 SRFI is intended to supersede SRFI 64 for the purpose of test
 definition.  By standardizing what a test <em>is</em> and leaving how
 it is <em>run</em> to test runners, this SRFI provides a stable
@@ -163,7 +163,7 @@ discovery mechanisms can be built.</p>
   syntactic forms: <code>is</code>, <code>test</code>,
   and <code>suite</code>, and a <code>test-runner*</code> parameter, a
   small set of predicates, and deferred
-  variant <code>suite-thunk</code>.</li>
+  variant <code>suite-loader</code>.</li>
 
   <li><strong>Test runner interface</strong> (normative message
   protocol).  A message-passing protocol that bridges test definitions
@@ -221,7 +221,7 @@ implementation.  In this section we set up this common glossary.
 
   <dt id="term-test-suite">Test suite</dt>
   <dd>A named grouping of tests and nested test suites produced by
-  the <code>suite</code> or <code>suite-thunk</code> form.  Suites
+  the <code>suite</code> or <code>suite-loader</code> form.  Suites
   impose hierarchical structure and may carry metadata that influences
   the test runner's behavior for the entire group.</dd>
 
@@ -667,61 +667,61 @@ is produced.  Code <em>must not</em> rely on the return value.</p>
     (is (equal? expected (round-trip input)))))</code></pre>
 
 
-<h3 id="suite-thunk-form"><code>suite-thunk</code> &mdash; deferred suite definition</h3>
+<h3 id="suite-loader-form"><code>suite-loader</code> &mdash; deferred suite definition</h3>
 
 <h4>Syntax</h4>
 
 <dl>
-  <dt><code>(suite-thunk <var>description</var> <var>body</var> &hellip;)</code></dt>
-  <dd>Returns a suite thunk that, when called, loads the suite.</dd>
+  <dt><code>(suite-loader <var>description</var> <var>body</var> &hellip;)</code></dt>
+  <dd>Returns a suite loader that, when called, loads the suite.</dd>
 
-  <dt><code>(suite-thunk <var>description</var> 'metadata <var>metadata-alist</var> <var>body</var> &hellip;)</code></dt>
+  <dt><code>(suite-loader <var>description</var> 'metadata <var>metadata-alist</var> <var>body</var> &hellip;)</code></dt>
   <dd>Same, with metadata.</dd>
 </dl>
 
 <h4>Description</h4>
 
-<p><code>suite-thunk</code> is the deferred counterpart
+<p><code>suite-loader</code> is the deferred counterpart
 of <code>suite</code>.  It constructs the same suite entity
 but <em>does not</em> immediately send it to the test runner.
-Instead, it returns a thunk that, when invoked, sends
-the <code>runner/load-suite</code> message.  The returned thunk should
-carry the information or be registered in some registry to make
-the <code>suite-thunk?</code> predicate return <code>#t</code> on
+Instead, it returns a suite loader, a procedure that, when invoked,
+sends the <code>runner/load-suite</code> message.  The returned loader
+should carry the information or be registered in some registry to make
+the <code>suite-loader?</code> predicate return <code>#t</code> on
 it.</p>
 
 <p>The relationship between the two forms is:</p>
 
 <pre><code>(suite <var>desc</var> <var>body</var> &hellip;)
 &equiv;
-((suite-thunk <var>desc</var> <var>body</var> &hellip;))</code></pre>
+((suite-loader <var>desc</var> <var>body</var> &hellip;))</code></pre>
 
 <p>Although <code>is</code> and <code>test</code> forms can appear at
 the top level, test modules <em>should</em> wrap all tests in
-a <code>suite-thunk</code> (or <code>define-suite</code>) so that
+a <code>suite-loader</code> (or <code>define-suite</code>) so that
 test runners can discover and load them as a unit.  A bare top-level
 <code>test</code> form is loaded as soon as the module is evaluated,
 with no way for a runner to discover it independently or defer its
 execution.</p>
 
-<p>Suite thunks are the primary building block for composable,
+<p>Suite loaders are the primary building block for composable,
 reusable test suites.  Because they are first-class procedures, they
 can be stored in variables, passed as arguments, and invoked inside
 other suites to include their tests:</p>
 
 <pre><code>(define my-unit-tests
-  (suite-thunk "unit tests"
+  (suite-loader "unit tests"
     (test ("one" _) (is #t))
     (test ("two" _) (is (= 2 (+ 1 1))))))
 
 (define my-integration-tests
-  (suite-thunk "integration tests"
+  (suite-loader "integration tests"
     (test ("round-trip" _)
       (is (equal? x (decode (encode x)))))))
 
 ;; Compose into a top-level public suite
 (define-public all-tests
-  (suite-thunk "all tests"
+  (suite-loader "all tests"
     (my-unit-tests)
     (my-integration-tests)))
 </code></pre>
@@ -732,7 +732,7 @@ other suites to include their tests:</p>
 
 <dl>
   <dt><code>(define-suite <var>name</var> <var>body</var> &hellip;)</code></dt>
-  <dd>Defines and exports a suite thunk bound
+  <dd>Defines and exports a suite loader bound
   to <var>name</var>.</dd>
 
   <dt><code>(define-suite <var>name</var> 'metadata <var>metadata-alist</var> <var>body</var> &hellip;)</code></dt>
@@ -743,16 +743,16 @@ other suites to include their tests:</p>
 <h4>Description</h4>
 
 <p><code>define-suite</code> is a convenience form that combines
-<code>suite-thunk</code> with a public definition.  It is equivalent
+<code>suite-loader</code> with a public definition.  It is equivalent
 to:</p>
 
 <pre><code>(define-public <var>name</var>
-  (suite-thunk (symbol->string '<var>name</var>) <var>body</var> &hellip;))</code></pre>
+  (suite-loader (symbol->string '<var>name</var>) <var>body</var> &hellip;))</code></pre>
 
 <p>Or, with metadata:</p>
 
 <pre><code>(define-public <var>name</var>
-  (suite-thunk (symbol->string '<var>name</var>) 'metadata <var>metadata-alist</var> <var>body</var> &hellip;))</code></pre>
+  (suite-loader (symbol->string '<var>name</var>) 'metadata <var>metadata-alist</var> <var>body</var> &hellip;))</code></pre>
 
 <p>The suite description string is derived from <var>name</var> by
 converting the symbol to a string.  This form is intended for
@@ -788,10 +788,10 @@ they are really handy for test runners implementers.
   keys <code>suite/body-thunk</code>
   and <code>suite/description</code>.</dd>
 
-  <dt><code>(suite-thunk? <var>obj</var>)</code> &rarr; <var>boolean</var></dt>
-  <dd>Returns <code>#t</code> if <var>obj</var> is a suite thunk
-  produced by <code>suite-thunk</code> or <code>define-suite</code>.
-  Implementations can mark suite thunks with a procedure property or
+  <dt><code>(suite-loader? <var>obj</var>)</code> &rarr; <var>boolean</var></dt>
+  <dd>Returns <code>#t</code> if <var>obj</var> is a suite loader
+  produced by <code>suite-loader</code> or <code>define-suite</code>.
+  Implementations can mark suite loaders with a procedure property or
   somehow else; ordinary lambdas do not satisfy this predicate.</dd>
 </dl>
 
@@ -806,7 +806,7 @@ project.  The definitions API is contained in a single module:</p>
   <li><a href="https://git.sr.ht/~abcdw/guile-ares-rs/tree/master/item/src/guile/ares/suitbl/definitions.scm">definitions.scm</a>
   &mdash; the complete test definition primitives
   (<code>is</code>, <code>test</code>, <code>suite</code>,
-  <code>suite-thunk</code>, <code>define-suite</code>,
+  <code>suite-loader</code>, <code>define-suite</code>,
   <code>test-runner*</code>, and predicates).</li>
 </ul>
 
@@ -832,16 +832,16 @@ the <code>test/body-procedure</code> lambda.  The runner can later
 call that procedure with any context value it chooses.</p>
 
 <p>The immediate <code>suite</code> form is defined in terms of
-<code>suite-thunk</code>: <code>suite</code> expands
-to <code>((suite-thunk&nbsp;&hellip;))</code>.  The deferred form is
+<code>suite-loader</code>: <code>suite</code> expands
+to <code>((suite-loader&nbsp;&hellip;))</code>.  The deferred form is
 the primitive; the immediate form simply invokes it.  This factoring
-keeps the macro logic in one place and makes suite thunks the natural
+keeps the macro logic in one place and makes suite loaders the natural
 unit of composition.</p>
 
-<p>The <code>suite-thunk</code> form returns a procedure that, when
+<p>The <code>suite-loader</code> form returns a procedure that, when
 called, sends a <code>runner/load-suite</code> message to the current
 test runner.  The returned procedure carries metadata that allows
-the <code>suite-thunk?</code> predicate to identify it (see
+the <code>suite-loader?</code> predicate to identify it (see
 portability notes below).</p>
 
 <h3>Portability considerations</h3>
@@ -866,10 +866,10 @@ systems:</p>
   <dt>Procedure properties
   (<code>set-procedure-properties!</code>,
   <code>procedure-property</code>)</dt>
-  <dd>Suite thunks are tagged using Guile's procedure properties so
-  that <code>suite-thunk?</code> can distinguish them from ordinary
+  <dd>Suite loaders are tagged using Guile's procedure properties so
+  that <code>suite-loader?</code> can distinguish them from ordinary
   lambdas.  Implementations without procedure properties can use
-  alternative strategies: placing suite-thunk in a hash table that
+  alternative strategies: placing suite-loader in a hash table that
   serves as a global registry, or any other mechanism that allows a
   reliable predicate.</dd>
 
