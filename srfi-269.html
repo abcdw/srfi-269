@@ -61,11 +61,6 @@ execution semantics recommendations for test runner implementers.</p>
 <h2 id="issues">Issues</h2>
 
 <ul>
-  <li><code>define-suite</code> actually has to be
-  called <code>define-suite-loader</code> or have parentheses similar
-  to the usual <code>define</code>, i.e. <code>(define-suite
-  (site-name) ...)</code>.</li>
-
   <li>Suite loader must be discoverable, it can be implemented as a
   lambda, which, when called with the extra
   argument <code>'suite-loader?</code>, returns <code>#t</code> or
@@ -761,11 +756,11 @@ other suites to include their tests:</p>
 <h4>Syntax</h4>
 
 <dl>
-  <dt><code>(define-suite <var>name</var> <var>body</var> &hellip;)</code></dt>
+  <dt><code>(define-suite (<var>name</var>) <var>body</var> &hellip;)</code></dt>
   <dd>Defines and exports a suite loader bound
   to <var>name</var>.</dd>
 
-  <dt><code>(define-suite <var>name</var> 'metadata <var>metadata-alist</var> <var>body</var> &hellip;)</code></dt>
+  <dt><code>(define-suite (<var>name</var>) 'metadata <var>metadata-alist</var> <var>body</var> &hellip;)</code></dt>
   <dd>Same, with user-provided <a href="#term-metadata">metadata</a>
   attached to the underlying suite entity.</dd>
 </dl>
@@ -773,8 +768,9 @@ other suites to include their tests:</p>
 <h4>Description</h4>
 
 <p><code>define-suite</code> is a convenience form that combines
-<code>suite-loader</code> with a public definition.  It is equivalent
-to:</p>
+<code>suite-loader</code> with a public definition.  The suite name is
+written in a parenthesized header, similar to a procedure definition
+with <code>define</code>.  It is equivalent to:</p>
 
 <pre><code>(define-public <var>name</var>
   (suite-loader (symbol->string '<var>name</var>) <var>body</var> &hellip;))</code></pre>
@@ -790,7 +786,7 @@ top-level suite definitions in test modules.</p>
 
 <h4>Examples</h4>
 
-<pre><code>(define-suite arithmetic-tests
+<pre><code>(define-suite (arithmetic-tests)
   (test ("addition" _)
     (is (= 4 (+ 2 2))))
   (test ("subtraction" _)
