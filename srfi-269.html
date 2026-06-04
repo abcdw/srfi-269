@@ -735,10 +735,12 @@ other suites to include their tests:</p>
       (is (equal? x (decode (encode x)))))))
 
 ;; Compose into a top-level public suite
-(define-public all-tests
+(define all-tests
   (suite-loader "all tests"
     (my-unit-tests)
     (my-integration-tests)))
+
+(export all-tests)
 </code></pre>
 
 <h3 id="define-suite-form"><code>define-suite</code> &mdash; named suite definition</h3>
@@ -747,8 +749,7 @@ other suites to include their tests:</p>
 
 <dl>
   <dt><code>(define-suite (<var>name</var>) <var>body</var> &hellip;)</code></dt>
-  <dd>Defines and exports a suite loader bound
-  to <var>name</var>.</dd>
+  <dd>Defines a suite loader bound to <var>name</var>.</dd>
 
   <dt><code>(define-suite (<var>name</var>) 'metadata <var>metadata-alist</var> <var>body</var> &hellip;)</code></dt>
   <dd>Same, with user-provided <a href="#term-metadata">metadata</a>
@@ -758,16 +759,16 @@ other suites to include their tests:</p>
 <h4>Description</h4>
 
 <p><code>define-suite</code> is a convenience form that combines
-<code>suite-loader</code> with a public definition.  The suite name is
-written in a parenthesized header, similar to a procedure definition
-with <code>define</code>.  It is equivalent to:</p>
+<code>suite-loader</code> with an ordinary definition.  The suite name
+is written in a parenthesized header, similar to a procedure
+definition with <code>define</code>.  It is equivalent to:</p>
 
-<pre><code>(define-public <var>name</var>
+<pre><code>(define <var>name</var>
   (suite-loader (symbol->string '<var>name</var>) <var>body</var> &hellip;))</code></pre>
 
 <p>Or, with metadata:</p>
 
-<pre><code>(define-public <var>name</var>
+<pre><code>(define <var>name</var>
   (suite-loader (symbol->string '<var>name</var>) 'metadata <var>metadata-alist</var> <var>body</var> &hellip;))</code></pre>
 
 <p>The suite description string is derived from <var>name</var> by
@@ -891,14 +892,6 @@ systems:</p>
   alternative strategies: placing suite-loader in a hash table that
   serves as a global registry, or any other mechanism that allows a
   reliable predicate.</dd>
-
-  <dt><code>define-public</code></dt>
-  <dd>The <code>define-suite</code> convenience macro expands
-  to <code>define-public</code>, a Guile shorthand for defining and
-  exporting a binding.  Other implementations should expand to their
-  own define-and-export form, or simply expand
-  to <code>define</code> and leave exporting to the module
-  declaration.</dd>
 </dl>
 
 <h3>Test suite</h3>
