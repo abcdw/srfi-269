@@ -9,7 +9,7 @@
 - [x] Add description to is (is (form args) "description")
 - [ ] Add note that test or assertion can be re-executed multiple times.
 - [ ] Remove assoc-ref
-- [ ] Add clojure like syntax for test ctx (test "descr" () ...)
+- [x] Add clojure like syntax for test ctx (test "descr" () ...)
 - [ ] Add info on how to set suite/description in define-suite
 
 ## Questions
@@ -28,7 +28,7 @@
 - [ ] 5. A definition of "fixture value" would be helpful.  (Pardon my
       ignorance of testing jargon.)
 - [ ] Do we need to discover all tests or only exported?
-- [ ] Make context optional for test? Keep description only syntax?
+- [x] Make context optional for test. An empty context list ignores context.
 - [x] is accept description as a second argument
 - [x] Rename body-thunk to body-procedure?
 - [x] define-suite uses parenthesis around the suite name

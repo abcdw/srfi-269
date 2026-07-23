@@ -393,7 +393,7 @@ to reuse the value returned by <code>is</code> forms:</p>
 (is (lset= = '(1 2 3) '(3 2 1)))
 
 ;; Assertion description in a complete test
-(test ("permission inheritance" ctx)
+(test "permission inheritance" (ctx)
   (define db (assoc-ref ctx 'db))
   (define project (create-project! db "srfi-269"))
   (define user (project-creator project))
@@ -409,13 +409,18 @@ to reuse the value returned by <code>is</code> forms:</p>
 <h4>Syntax</h4>
 
 <dl>
-  <dt><code>(test (<var>description</var> <var>context</var>) <var>body</var> &hellip;)</code></dt>
+  <dt><code>(test <var>description</var> () <var>body</var> &hellip;)</code></dt>
+  <dd>Defines and immediately loads a test without binding a context
+  identifier in the test body.</dd>
+
+  <dt><code>(test <var>description</var> (<var>context</var>) <var>body</var> &hellip;)</code></dt>
   <dd>Defines and immediately loads a test.  The
   identifier <var>context</var> is bound in the test body.</dd>
 
-  <dt><code>(test (<var>description</var> <var>context</var>) 'metadata <var>metadata-alist</var> <var>body</var> &hellip;)</code></dt>
-  <dd>Same, with user-provided <a href="#term-metadata">metadata</a>
-  attached to the test entity.</dd>
+  <dt><code>(test <var>description</var> () 'metadata <var>metadata-alist</var> <var>body</var> &hellip;)</code></dt>
+  <dt><code>(test <var>description</var> (<var>context</var>) 'metadata <var>metadata-alist</var> <var>body</var> &hellip;)</code></dt>
+  <dd>Same forms, with user-provided
+  <a href="#term-metadata">metadata</a> attached to the test entity.</dd>
 </dl>
 
 <h4>Description</h4>
@@ -445,12 +450,14 @@ point in time, or skip them entirely, relying on external state makes
 test results unpredictable.</p>
 
 <p><var>description</var> is a string that serves as a human-readable
-label for the test.  <var>context</var> is an identifier used as the
-formal parameter of the body procedure.  Tests that do not need the
-context can use <code>_</code> as the identifier.  The
-<var>body</var> forms typically contain zero or more <code>is</code>
-assertions, but may contain arbitrary Scheme expressions
-(e.g.&nbsp;local definitions, setup code).</p>
+label for the test.  The context list is either empty or contains a
+single <var>context</var> identifier.  When present, the identifier is
+used as the formal parameter of the body procedure.  When the list is
+empty, the runner-supplied context value is ignored and no context
+identifier is bound in the test body.  The <var>body</var> forms
+typically contain zero or more <code>is</code> assertions, but may
+contain arbitrary Scheme expressions (e.g.&nbsp;local definitions,
+setup code).</p>
 
 <p>The test entity contains the following keys:</p>
 
@@ -462,8 +469,9 @@ assertions, but may contain arbitrary Scheme expressions
     <tr>
       <td><code>test/body-procedure</code></td>
       <td>A procedure of one argument.  When called with a context
-      value, it evaluates the <var>body</var> forms in order with
-      <var>context</var> bound to that value.</td>
+      value, it evaluates the <var>body</var> forms in order.  If a
+      <var>context</var> identifier was provided, it is bound to that
+      value.</td>
     </tr>
     <tr>
       <td><code>test/description</code></td>
@@ -490,9 +498,9 @@ assertions, but may contain arbitrary Scheme expressions
 <h4>Constraints</h4>
 
 <ul>
-  <li>The <var>context</var> part of the test header must be an
-  identifier.  It is bound only in the test body, not while evaluating
-  the <var>metadata-alist</var>.</li>
+  <li>The argument list must be empty or contain exactly one
+  identifier.  When present, the identifier is bound only in the test
+  body, not while evaluating the <var>metadata-alist</var>.</li>
   <li>Tests <em>should not</em> be nested.  Invoking <code>test</code>
   inside the body of another <code>test</code> is an error; the test
   runner <em>should</em> signal it.  However, in some cases, it can be
@@ -513,16 +521,16 @@ produced.  Code <em>must not</em> rely on the return value.</p>
 <h4>Examples</h4>
 
 <pre><code>;; Minimal test
-(test ("addition works" _)
+(test "addition works" ()
   (is (= 4 (+ 2 2))))
 
 ;; Multiple assertions in one test
-(test ("string operations" _)
+(test "string operations" ()
   (is (string=? "HELLO" (string-upcase "hello")))
   (is (= 5 (string-length "hello"))))
 
 ;; Test using context and metadata
-(test ("database round-trip" ctx)
+(test "database round-trip" (ctx)
   'metadata
   '((tags . (integration))
     (timeout . 30))
@@ -530,7 +538,7 @@ produced.  Code <em>must not</em> rely on the return value.</p>
   (is (equal? sample-record (db-read db (db-write db sample-record)))))
 
 ;; Test with setup code
-(test ("list reversal" _)
+(test "list reversal" ()
   (define xs '(1 2 3))
   (is (equal? '(3 2 1) (reverse xs))))</code></pre>
 
@@ -625,27 +633,27 @@ is produced.  Code <em>must not</em> rely on the return value.</p>
 
 <pre><code>;; Flat suite
 (suite "arithmetic"
-  (test ("addition" _)
+  (test "addition" ()
     (is (= 4 (+ 2 2))))
-  (test ("multiplication" _)
+  (test "multiplication" ()
     (is (= 6 (* 2 3)))))
 
 ;; Nested suites
 (suite "strings"
   (suite "case conversion"
-    (test ("upcase" _)
+    (test "upcase" ()
       (is (string=? "HELLO" (string-upcase "hello"))))
-    (test ("downcase" _)
+    (test "downcase" ()
       (is (string=? "hello" (string-downcase "HELLO")))))
   (suite "splitting"
-    (test ("split on comma" _)
+    (test "split on comma" ()
       (is (equal? '("a" "b" "c")
                   (string-split "a,b,c" #\,))))))
 
 ;; Suite with metadata
 (suite "integration tests" 'metadata '((tags . (integration))
                                        (slow? . #t))
-  (test ("end-to-end round trip" _)
+  (test "end-to-end round trip" ()
     (is (equal? expected (round-trip input)))))</code></pre>
 
 
@@ -693,12 +701,12 @@ other suites to include their tests:</p>
 
 <pre><code>(define my-unit-tests
   (suite-loader "unit tests"
-    (test ("one" _) (is #t))
-    (test ("two" _) (is (= 2 (+ 1 1))))))
+    (test "one" () (is #t))
+    (test "two" () (is (= 2 (+ 1 1))))))
 
 (define my-integration-tests
   (suite-loader "integration tests"
-    (test ("round-trip" _)
+    (test "round-trip" ()
       (is (equal? x (decode (encode x)))))))
 
 ;; Compose into a top-level public suite
@@ -745,9 +753,9 @@ top-level suite definitions in test modules.</p>
 <h4>Examples</h4>
 
 <pre><code>(define-suite (arithmetic-tests)
-  (test ("addition" _)
+  (test "addition" ()
     (is (= 4 (+ 2 2))))
-  (test ("subtraction" _)
+  (test "subtraction" ()
     (is (= 0 (- 2 2)))))
 
 ;; Now (arithmetic-tests) can be called from another suite
@@ -808,11 +816,13 @@ description expression.  When present, it is evaluated and stored
 under <code>assertion/description</code>; otherwise, <code>#f</code> is
 stored.  The unevaluated source form is captured as a datum.</p>
 
-<p>The <code>test</code> macro parses a leading
-<code>(<var>description</var> <var>context</var>)</code> pair and
-uses <var>context</var> as the formal parameter of
-the <code>test/body-procedure</code> lambda.  The runner can later
-call that procedure with any context value it chooses.</p>
+<p>The <code>test</code> macro parses a description expression
+followed by a argument list.  The list is either empty or contains one
+<var>context</var> identifier.  The generated
+<code>test/body-procedure</code> always accepts one context value.  If
+an identifier is present, it is used as the formal parameter;
+otherwise, the value is ignored.  The runner can later call that
+procedure with any context value it chooses.</p>
 
 <p>The immediate <code>suite</code> form is defined in terms of
 <code>suite-loader</code>: <code>suite</code> expands
