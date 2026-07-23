@@ -1,6 +1,6 @@
 ## Tasks
 - [ ] Add a note that is can be renamed on export as check or whatever
-- [ ] Remove predicate form for is.
+- [x] Remove predicate form for is.
 - [ ] Rename test-runner* to current-test-runner
 - [.] Add set test runner API
 (define (set-test-runner! obj)

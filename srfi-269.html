@@ -117,15 +117,16 @@ decisions:</p>
   message-passing protocol.  Definition code is fully portable;
   execution and reporting strategy varies by environment.</li>
 
-  <li><strong>First-class test entities.</strong> Because tests
-  are data, runners can filter by metadata, reorder, wrap each test in
+  <li><strong>First-class test entities.</strong> Because tests are
+  data, runners can filter by metadata, reorder, wrap each test in
   exception guards or continuation barriers, enforce timeouts, and
   re-run arbitrary subsets without changing a single line of test
-  definition code.  Suite loaders are composable procedures that can be
-  stored, exported, and combined.  The <code>is</code> macro captures
-  both the unevaluated source form and a separate argument thunk,
-  enabling rich failure diagnostics.  The result is an API that is
-  equally at home in CI pipelines and in live REPL sessions.</li>
+  definition code.  Suite loaders are composable procedures that can
+  be stored, exported, and combined.  The <code>is</code> macro
+  captures both the unevaluated source form and a thunk that evaluates
+  it, allowing runners to inspect and execute assertions separately.
+  The result is an API that is equally at home in CI pipelines and in
+  live REPL sessions.</li>
 </ol>
 
 <p>The API surface is deliberately minimal: three definition forms,
@@ -186,10 +187,7 @@ implementation.  In this section we set up this common glossary.
   <dt id="term-assertion">Assertion</dt>
   <dd>A single check produced by the <code>is</code> macro.  An
   assertion captures an expression (the <em>body</em>), a thunk that
-  evaluates it, and its source location.  When the body is a predicate
-  application <code>(pred arg&nbsp;&hellip;)</code>, the assertion also
-  captures a separate thunk that evaluates the arguments, enabling
-  richer failure messages.</dd>
+  evaluates it, and its source location.</dd>
 
   <dt id="term-test">Test</dt>
   <dd>A named, independently executable unit of testing produced by
@@ -307,15 +305,6 @@ itself or for running tests with alternative reporters.</p>
 
   <dt><code>(is <var>expression</var> <var>description</var>)</code></dt>
   <dd>Same, with a human-readable assertion description.</dd>
-
-  <dt><code>(is (<var>predicate</var> <var>argument</var> &hellip;))</code></dt>
-  <dd>Predicate form.  A special case of the general form where the
-  body is a procedure application.  In addition to the general-form
-  behavior, this form captures the arguments separately for richer
-  failure reporting.</dd>
-
-  <dt><code>(is (<var>predicate</var> <var>argument</var> &hellip;) <var>description</var>)</code></dt>
-  <dd>Predicate form with a human-readable assertion description.</dd>
 </dl>
 
 <h4>Description</h4>
@@ -362,25 +351,6 @@ source form.</p>
   </tbody>
 </table>
 
-<p>When the body has the predicate-application
-shape <code>(<var>predicate</var> <var>argument</var>&nbsp;&hellip;)</code>,
-the entity additionally contains:</p>
-
-<table>
-  <thead>
-    <tr><th>Key</th><th>Value</th></tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><code>assertion/args-thunk</code></td>
-      <td>A thunk that, when called, evaluates the arguments and
-      returns the values as a list.  This enables a test runner to display
-      the actual argument values in a failure report, separately from
-      the predicate.</td>
-    </tr>
-  </tbody>
-</table>
-
 <p>The message sent to the test runner has the form:</p>
 
 <pre><code>`((type        . runner/run-assertion)
@@ -402,10 +372,6 @@ to reuse the value returned by <code>is</code> forms:</p>
   a <code>test</code>, the test runner <em>should</em> signal an
   error.  Assertions are the province of tests; suites only group
   tests.</li>
-  <li>The predicate position must be a procedure, not a macro.  If a
-  macro appears in the predicate position, the separate
-  argument-evaluation thunk may capture the arguments out of context,
-  leading to unexpected errors at run time.</li>
   <li>If a <var>description</var> is provided, it must evaluate to a
   string.</li>
 </ul>
@@ -420,7 +386,7 @@ to reuse the value returned by <code>is</code> forms:</p>
 (let ((x "hello"))
   (is x))
 
-;; Predicate form &mdash; enables rich failure messages
+;; Procedure applications
 (is (= 4 (+ 2 2)))
 (is (string=? "hello" (greet "world")))
 (is (even? 14))
@@ -836,15 +802,11 @@ portable across Scheme implementations.</p>
 
 <h3>Design notes</h3>
 
-<p>The <code>is</code> macro distinguishes two shapes: the
-predicate-application shape
-<code>(<var>pred</var> <var>arg</var>&nbsp;&hellip;)</code>, which
-produces both a body thunk and a separate arguments thunk, and an
-arbitrary expression, which produces only a body thunk.  Both shapes
-accept an optional description expression.  When present, it is
-evaluated and stored under <code>assertion/description</code>;
-otherwise, <code>#f</code> is stored.  Both shapes capture the
-unevaluated source form as a datum.</p>
+<p>The <code>is</code> macro accepts an arbitrary expression and
+produces a body thunk that evaluates it.  It also accepts an optional
+description expression.  When present, it is evaluated and stored
+under <code>assertion/description</code>; otherwise, <code>#f</code> is
+stored.  The unevaluated source form is captured as a datum.</p>
 
 <p>The <code>test</code> macro parses a leading
 <code>(<var>description</var> <var>context</var>)</code> pair and
