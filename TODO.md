@@ -8,7 +8,7 @@
 - [x] Mention SRFI-229 and SRFI-259 for tagged procedures.
 - [x] Add description to is (is (form args) "description")
 - [ ] Add note that test or assertion can be re-executed multiple times.
-- [ ] Remove assoc-ref
+- [x] Remove assoc-ref
 - [x] Add clojure like syntax for test ctx (test "descr" () ...)
 - [ ] Add info on how to set suite/description in define-suite
 

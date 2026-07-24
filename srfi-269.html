@@ -394,7 +394,7 @@ to reuse the value returned by <code>is</code> forms:</p>
 
 ;; Assertion description in a complete test
 (test "permission inheritance" (ctx)
-  (define db (assoc-ref ctx 'db))
+  (define db (cdr (assq 'db ctx)))
   (define project (create-project! db "srfi-269"))
   (define user (project-creator project))
   (define permissions (user-permissions db user project))
@@ -435,7 +435,7 @@ message.</p>
 <p>A test runner executes the body procedure by applying it to a
 context value:</p>
 
-<pre><code>((assoc-ref test 'test/body-procedure) context)</code></pre>
+<pre><code>((cdr (assq 'test/body-procedure test)) context)</code></pre>
 
 <p>The context value is supplied by the runner.  This SRFI does not
 prescribe its representation or contents; it may be an alist, record,
@@ -534,7 +534,7 @@ produced.  Code <em>must not</em> rely on the return value.</p>
   'metadata
   '((tags . (integration))
     (timeout . 30))
-  (define db (assoc-ref ctx 'db))
+  (define db (cdr (assq 'db ctx)))
   (is (equal? sample-record (db-read db (db-write db sample-record)))))
 
 ;; Test with setup code
