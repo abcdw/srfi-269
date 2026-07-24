@@ -55,3 +55,6 @@
 - [x] Call suite-loader with metadata
 - [-] Rename define-suite to define-suite-loader/define-suitel
 - [x] Do we need to wrap define-suite in parenthesis? (yes, same same as define-stream)
+- [ ] Split test/name and test/description, suite/name and
+      suite/description. Check out
+      https://clojuredocs.org/clojure.test/testing
