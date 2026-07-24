@@ -148,8 +148,9 @@ discovery mechanisms can be built.</p>
 <ol>
   <li><strong>Test definition primitives</strong> (normative).  Three
   syntactic forms: <code>is</code>, <code>test</code>,
-  and <code>suite</code>, and a <code>test-runner*</code> parameter, a
-  small set of predicates, and deferred
+  and <code>suite</code>, and a
+  <code>current-test-runner</code> parameter, a small set of predicates,
+  and deferred
   variant <code>suite-loader</code>.</li>
 
   <li><strong>Test runner interface</strong> (normative message
@@ -168,7 +169,7 @@ list (alist), and delivers it to the current test runner via a
 <em>message</em>.  A test entity captures the test body as a
 one-argument procedure, its source location, description string, and
 optional metadata.  The test runner is a procedure stored in
-the <code>test-runner*</code> parameter; it receives messages as
+the <code>current-test-runner</code> parameter; it receives messages as
 alists and is free to execute tests immediately, collect them for
 later, or take any other action.</p>
 
@@ -219,17 +220,19 @@ implementation.  In this section we set up this common glossary.
 
   <dt id="term-message">Message</dt>
   <dd>An association list sent to the test runner via
-  the <code>test-runner*</code> parameter.  Every message contains at
-  least a <code>type</code> key whose value is a symbol identifying
-  the kind of message (e.g.&nbsp;<code>runner/run-assertion</code>,
+  the <code>current-test-runner</code> parameter.  Every message
+  contains at least a <code>type</code> key whose value is a symbol
+  identifying the kind of message
+  (e.g.&nbsp;<code>runner/run-assertion</code>,
   <code>runner/load-test</code>, <code>runner/load-suite</code>).  The
   remaining keys carry the entities and any additional context.</dd>
 
   <dt id="term-test-runner">Test runner</dt>
   <dd>A procedure of one argument (a message), which can be used as
-  a <code>test-runner*</code> parameter.  The test runner receives
-  every message produced by the definition primitives and decides how
-  to handle it: for example, by executing an assertion immediately, by
+  a <code>current-test-runner</code> parameter.  The test runner
+  receives every message produced by the definition primitives and
+  decides how to handle it: for example, by executing an assertion
+  immediately, by
   collecting a test for deferred execution, or by building a suite
   hierarchy.  This SRFI specifies the messages a test
   runner <em>must</em> accept; it does not prescribe execution order,
@@ -264,31 +267,32 @@ implementation.  In this section we set up this common glossary.
 
 </dl>
 
-<h3 id="test-runner-parameter"><code>test-runner*</code> parameter</h3>
+<h3 id="current-test-runner-parameter">
+  <code>current-test-runner</code> parameter</h3>
 
 <dl>
-  <dt><code>(test-runner*)</code></dt>
+  <dt><code>(current-test-runner)</code></dt>
   <dd>Returns the current test runner procedure.</dd>
 
-  <dt><code>(test-runner* <var>runner</var>)</code></dt>
+  <dt><code>(current-test-runner <var>runner</var>)</code></dt>
   <dd>Sets the current test runner to <var>runner</var>.</dd>
 </dl>
 
-<p><code>test-runner*</code> is a
+<p><code>current-test-runner</code> is a
 <a href="https://r7rs.org/">parameter object</a> (as defined
 by <code>make-parameter</code>) that holds the current test runner
 procedure.  All definition primitives&mdash;<code>is</code>,
 <code>test</code>, and <code>suite</code>&mdash;deliver their messages
-by calling <code>(test-runner*)</code> to obtain the runner and then
-applying it to a message.</p>
+by calling <code>(current-test-runner)</code> to obtain the runner and
+then applying it to a message.</p>
 
-<p>If <code>test-runner*</code> is never set, invoking any definition
-primitive <em>should</em> produce a diagnostic indicating that no
-runner has been configured.  Libraries that provide a test runner
-<em>should</em> set <code>test-runner*</code> upon loading so that
-end users need not configure it manually.</p>
+<p>If <code>current-test-runner</code> is never set, invoking any
+definition primitive <em>should</em> produce a diagnostic indicating
+that no runner has been configured.  Libraries that provide a test
+runner <em>should</em> set <code>current-test-runner</code> upon loading
+so that end users need not configure it manually.</p>
 
-<p>Because <code>test-runner*</code> is a parameter, it can be
+<p>Because <code>current-test-runner</code> is a parameter, it can be
 rebound with <code>parameterize</code> to install a different runner
 for a dynamic extent, which is useful for testing the test framework
 itself or for running tests with alternative reporters.</p>
@@ -505,7 +509,8 @@ setup code).</p>
   inside the body of another <code>test</code> is an error; the test
   runner <em>should</em> signal it.  However, in some cases, it can be
   useful to have a test or suite inside the test, it can be achieved,
-  if the test-runner* is parameterized (temporary redefined).</li>
+  if <code>current-test-runner</code> is parameterized (temporarily
+  redefined).</li>
   <li>Tests <em>may</em> appear at the top level or inside
   a <code>suite</code>.  When inside a suite, the test runner
   associates the test with the enclosing suite path.</li>
@@ -799,7 +804,7 @@ project.  The definitions API is contained in a single module:</p>
   &mdash; the complete test definition primitives
   (<code>is</code>, <code>test</code>, <code>suite</code>,
   <code>suite-loader</code>, <code>define-suite</code>,
-  <code>test-runner*</code>, and predicates).</li>
+  <code>current-test-runner</code>, and predicates).</li>
 </ul>
 
 <p>The implementation depends on <code>syntax-case</code>,

@@ -1,10 +1,10 @@
 ## Tasks
 - [ ] Add a note that is can be renamed on export as check or whatever
 - [x] Remove predicate form for is.
-- [ ] Rename test-runner* to current-test-runner
+- [x] Rename runner parameter to current-test-runner
 - [.] Add set test runner API
 (define (set-test-runner! obj)
-  (test-runner* obj))
+  (current-test-runner obj))
 - [x] Mention SRFI-229 and SRFI-259 for tagged procedures.
 - [x] Add description to is (is (form args) "description")
 - [ ] Add note that test or assertion can be re-executed multiple times.
