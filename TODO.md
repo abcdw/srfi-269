@@ -10,23 +10,25 @@
 - [x] Add note that test or assertion can be re-executed multiple times.
 - [x] Remove assoc-ref
 - [x] Add clojure like syntax for test ctx (test "descr" () ...)
-- [ ] Add info on how to set suite/description in define-suite
+- [ ] Make it clear how context is constructed and modified (immutable
+      alist with sideeffectful values).
 
 ## Questions
 - [.] Add description to define-suite (name "optional description").
       Can be done with metadata if needed.
-- [ ] Make is flexible enough to implement expect https://www.futurile.net/2020/07/14/clojure-testing-with-clojure-test-and-expectations/
+- [ ] Add info on how to set suite/description in define-suite
+- [ ] Establish baseline for ctx value of the test
+- [ ] A definition of "fixture value" would be helpful.  (Pardon my
+      ignorance of testing jargon.)
+- [-] Make is flexible enough to implement expect
+  https://www.futurile.net/2020/07/14/clojure-testing-with-clojure-test-and-expectations/
+  (expect can be implemented by direct runner/run-assertion message
+  call)
 
 - [ ] Add test-loader and define-suite to normative API?
 - [x] Description in paranthesis together with context is confusing
 - [-] Wrap metadata in parenthesis
-- [ ] Make it clear how context is constructed and modified (immutable
-      alist with sideeffectful values).
 - [ ] Add runner/run-tests message or define reccomendation for running
-- [ ] Establish baseline for ctx value of the test
-- [ ] Add `test/id`, `suite/id` recommendation to SRFI
-- [ ] 5. A definition of "fixture value" would be helpful.  (Pardon my
-      ignorance of testing jargon.)
 - [ ] Do we need to discover all tests or only exported?
 - [x] Make context optional for test. An empty context list ignores context.
 - [x] is accept description as a second argument
@@ -44,8 +46,10 @@
 - [-] Make suite-thunk return an alist and (run-suite-thunk ...) run
       it? For portable implementations without procedure tags.
 
-- [ ] Make destructuring great again. (Implement it on suitbl/SRFI or separate?)
-- [ ] is macro as a syntax parameter set by context?
+- [-] Make destructuring great again. (Implement it on suitbl/SRFI or separate?)
+- [-] is macro as a syntax parameter set by context? (potentially too
+  complicated, better to implement alternative form calling
+  runner/run-assertion)
 - [-] with-ctx
 - [-] with-metadata macro
 - [-] (suite-loader-constructor metadata) -> (suite-loader ctx) (2 pass before load)
@@ -58,3 +62,5 @@
 - [ ] Split test/name and test/description, suite/name and
       suite/description. Check out
       https://clojuredocs.org/clojure.test/testing
+- [-] Add `test/id`, `suite/id` recommendation to SRFI (Test runner
+  scope, a good candidate for a separate SRFI).
