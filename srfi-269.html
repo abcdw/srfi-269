@@ -322,6 +322,10 @@ delivers it to the current test runner by sending
 a <code>runner/run-assertion</code> message.  The test runner decides
 how to execute the assertion and what to do with the result.</p>
 
+<p>Programs may rename <code>is</code> when importing it, or wrapper
+libraries may re-export it under a name such as <code>check</code>, using
+the implementation's library renaming facilities.</p>
+
 <p>An optional <var>description</var> expression may be supplied as the
 second argument.  It must evaluate to a string.  The description is
 stored in the assertion entity so reporters can present the domain

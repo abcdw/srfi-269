@@ -1,5 +1,5 @@
 ## Tasks
-- [ ] Add a note that is can be renamed on export as check or whatever
+- [x] Add a note that is can be renamed on export as check or whatever
 - [x] Remove predicate form for is.
 - [x] Rename runner parameter to current-test-runner
 - [x] Add set test runner API
