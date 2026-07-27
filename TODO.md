@@ -2,8 +2,8 @@
 - [ ] Add a note that is can be renamed on export as check or whatever
 - [x] Remove predicate form for is.
 - [x] Rename runner parameter to current-test-runner
-- [.] Add set test runner API
-(define (set-test-runner! obj)
+- [x] Add set test runner API
+(define (set-current-test-runner! obj)
   (current-test-runner obj))
 - [x] Mention SRFI-229 and SRFI-259 for tagged procedures.
 - [x] Add description to is (is (form args) "description")
