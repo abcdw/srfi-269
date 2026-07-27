@@ -199,10 +199,11 @@ implementation.  In this section we set up this common glossary.
   supplied by the runner when the test is executed.</dd>
 
   <dt id="term-test-context">Test context</dt>
-  <dd>The value supplied by a test runner to a test body procedure.
-  Its representation and meaning are defined by the runner.  Typical
-  uses include fixture values, callbacks, runner services, metadata,
-  and other data needed while a test runs.</dd>
+  <dd>An association list supplied by a test runner to a test body
+  procedure.  It is treated as immutable by convention: its pairs are
+  not modified after construction, although its values may be stateful.
+  Typical values include fixture resources, callbacks, runner services,
+  metadata, and other data needed while a test runs.</dd>
 
   <dt id="term-test-suite">Test suite</dt>
   <dd>A named grouping of tests and nested test suites produced by
@@ -448,17 +449,29 @@ context value:</p>
 
 <pre><code>((cdr (assq 'test/body-procedure test)) context)</code></pre>
 
-<p>The context value is supplied by the runner.  This SRFI does not
-prescribe its representation or contents; it may be an alist, record,
-object, or any other Scheme value.  Runners can use it to pass
-fixture values, callbacks, runner services, metadata, or other data to
-tests.</p>
+<p>The context value is supplied by the runner and is an association
+list.  A runner <em>should</em> construct it anew for every invocation of
+a test body procedure.  Context producers, such as fixtures or runner
+middleware, extend a context by constructing a new alist and passing it
+to the next producer or to the test.  They <em>should not</em> modify the
+pairs that form an existing context.  Prepending a new association lets
+a producer add a key or shadow an earlier association without modifying
+the original context.</p>
 
-<p>A test should be self-contained: its body should not
-depend on side effects produced by surrounding expressions or by other
-tests.  Because a test runner may execute tests in any order, at any
-point in time, or skip them entirely, relying on external state makes
-test results unpredictable.</p>
+<p>Treating the context structure as immutable does not require its
+values to be immutable.  A context may contain stateful resources such
+as database connections, sockets, ports, or boxes.  Tests and context
+producers may perform the side effects supported by those values.  The
+context alist itself remains unchanged; replacing or adding an
+association requires constructing and passing a new context.</p>
+
+<p>A test should be self-contained: its body should not depend on side
+effects produced by surrounding expressions or by other tests.  Side
+effects directed at values in the context are permitted, but a runner
+should arrange setup and cleanup so that each execution starts with the
+intended state.  Because a test runner may execute tests in any order,
+at any point in time, or skip them entirely, relying on unrelated
+external state makes test results unpredictable.</p>
 
 <p>A test entity is not single-use.  A test runner may call its body
 procedure multiple times, possibly with a different context value each

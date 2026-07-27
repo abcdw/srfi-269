@@ -10,7 +10,7 @@
 - [x] Add note that test or assertion can be re-executed multiple times.
 - [x] Remove assoc-ref
 - [x] Add clojure like syntax for test ctx (test "descr" () ...)
-- [ ] Make it clear how context is constructed and modified (immutable
+- [x] Make it clear how context is constructed and modified (immutable
       alist with sideeffectful values).
 
 ## Questions
