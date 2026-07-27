@@ -460,6 +460,12 @@ tests.  Because a test runner may execute tests in any order, at any
 point in time, or skip them entirely, relying on external state makes
 test results unpredictable.</p>
 
+<p>A test entity is not single-use.  A test runner may call its body
+procedure multiple times, possibly with a different context value each
+time.  Every call evaluates the test body anew, so each <code>is</code>
+form constructs and delivers a new assertion entity, and any other
+side effects occur again.</p>
+
 <p><var>description</var> is a string that serves as a human-readable
 label for the test.  The context list is either empty or contains a
 single <var>context</var> identifier.  When present, the identifier is
