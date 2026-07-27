@@ -677,16 +677,33 @@ is produced.  Code <em>must not</em> rely on the return value.</p>
   <dd>Same, with metadata.</dd>
 </dl>
 
+<h4>Suite loader invocation</h4>
+
+<dl>
+  <dt><code>(<var>loader</var>)</code></dt>
+  <dd>Loads the suite with its definition-time metadata.</dd>
+
+  <dt><code>(<var>loader</var> <var>metadata-alist</var>)</code></dt>
+  <dd>Loads the suite with additional call-time metadata.</dd>
+</dl>
+
 <h4>Description</h4>
 
 <p><code>suite-loader</code> is the deferred counterpart
 of <code>suite</code>.  It constructs the same suite entity
 but <em>does not</em> immediately send it to the test runner.
-Instead, it returns a suite loader, a procedure that, when invoked,
-sends the <code>runner/load-suite</code> message.  The returned loader
-should carry the information or be registered in some registry to make
-the <code>suite-loader?</code> predicate return <code>#t</code> on
-it.</p>
+Instead, it returns a suite loader, a procedure that accepts zero or
+one argument and, when invoked, sends
+the <code>runner/load-suite</code> message.  The optional argument must
+be a metadata alist.  Its entries are placed before the metadata
+provided when the suite loader was defined.  Consequently, alist
+lookup procedures that return the first matching entry observe
+call-time values as taking precedence over definition-time values.
+Invoking a suite loader must not modify its definition-time metadata,
+so the same loader can be invoked repeatedly with different metadata.
+The returned loader should carry the information or be registered in
+some registry to make the <code>suite-loader?</code> predicate
+return <code>#t</code> on it.</p>
 
 <p>The relationship between the two forms is:</p>
 
@@ -717,10 +734,12 @@ other suites to include their tests:</p>
     (test "round-trip" ()
       (is (equal? x (decode (encode x)))))))
 
-;; Compose into a top-level public suite
+;; Compose into a top-level public suite.  The same loader can be
+;; called more than once with different metadata.
 (define all-tests
   (suite-loader "all tests"
-    (my-unit-tests)
+    (my-unit-tests '((configuration . default)))
+    (my-unit-tests '((configuration . strict)))
     (my-integration-tests)))
 
 (export all-tests)
@@ -840,11 +859,14 @@ the primitive; the immediate form simply invokes it.  This factoring
 keeps the macro logic in one place and makes suite loaders the natural
 unit of composition.</p>
 
-<p>The <code>suite-loader</code> form returns a procedure that, when
-called, sends a <code>runner/load-suite</code> message to the current
-test runner.  The returned procedure carries metadata that allows
-the <code>suite-loader?</code> predicate to identify it (see
-portability notes below).</p>
+<p>The <code>suite-loader</code> form returns a procedure that accepts
+an optional metadata alist and, when called, sends
+a <code>runner/load-suite</code> message to the current test runner.
+The implementation constructs the effective suite metadata by
+appending the definition-time metadata to the call-time metadata,
+without modifying either alist.  The returned procedure carries an
+identifying marker that allows the <code>suite-loader?</code> predicate
+to identify it (see portability notes below).</p>
 
 <h3>Portability considerations</h3>
 
