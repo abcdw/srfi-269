@@ -131,15 +131,14 @@ decisions:</p>
 </ol>
 
 <p>The API surface is deliberately minimal: three definition forms,
-one parameter, one setter procedure, three predicates, and one deferred
-variant.  Yet it covers assertions with rich diagnostics, named tests,
-nested suites,
-user-provided metadata, and deferred composable suite loaders.  This
-SRFI is intended to supersede SRFI 64 for the purpose of test
-definition.  By standardizing what a test <em>is</em> and leaving how
-it is <em>run</em> to test runners, this SRFI provides a stable
-foundation on which future standards for runners, reporters, and
-discovery mechanisms can be built.</p>
+one parameter, one setter procedure, three predicates, and one
+deferred variant.  Yet it covers assertions with rich diagnostics,
+named tests, nested suites, user-provided metadata, and deferred
+composable suite loaders.  This SRFI is intended to supersede SRFI 64
+for the purpose of test definition.  By standardizing what a
+test <em>is</em> and leaving how it is <em>run</em> to test runners,
+this SRFI provides a stable foundation on which future standards for
+runners, reporters, and discovery mechanisms can be built.</p>
 
 <h2 id="specification">Specification</h2>
 
@@ -187,36 +186,42 @@ implementation.  In this section we set up this common glossary.
 
 <dl>
   <dt id="term-assertion">Assertion</dt>
-  <dd>A single check produced by the <code>is</code> macro.  An
-  assertion captures an expression (the <em>body</em>), a thunk that
-  evaluates it, and its source location.</dd>
+  <dd>A single check, usually produced by the <code>is</code> macro.
+  An assertion captures an expression (the <em>body</em>), a thunk
+  that evaluates it, and its source location. It also has an optional
+  description to clarify the intent of assertion if it's not clear
+  from the asserting expression.</dd>
 
   <dt id="term-test">Test</dt>
-  <dd>A named, independently executable unit of testing produced by
-  the <code>test</code> form.  A test groups zero or more assertions
-  together under a human-readable description string.  Tests are the
-  smallest unit that a test runner schedules and reports on.  A test
-  body procedure is a one-argument procedure whose argument is
-  supplied by the runner when the test is executed.</dd>
+  <dd>A named, independently executable unit of testing, usually
+  produced by the <code>test</code> form.  A test groups zero or more
+  assertions together under a human-readable description string.
+  Tests are the smallest unit that a test runner schedules and reports
+  on.  A test body procedure is a one-argument procedure whose
+  argument is supplied by the runner when the test is executed.</dd>
 
   <dt id="term-test-context">Test context</dt>
   <dd>An association list supplied by a test runner to a test body
   procedure.  It is treated as immutable by convention: its pairs are
-  not modified after construction, although its values may be stateful.
-  Typical values include fixture resources, callbacks, runner services,
-  metadata, and other data needed while a test runs.</dd>
+  not modified after construction, although their values may be
+  stateful.  Typical values include resources created by fixtures,
+  callbacks, metadata, and other data needed during a test runs.  The
+  primary goal of text context is to provide an explicit communication
+  channel between fixtures, tests and test runner.</dd>
 
   <dt id="term-test-suite">Test suite</dt>
-  <dd>A named grouping of tests and nested test suites produced by
-  the <code>suite</code> or <code>suite-loader</code> form.  Suites
-  impose hierarchical structure and may carry metadata that influences
-  the test runner's behavior for the entire group.</dd>
+  <dd>A named grouping of tests and nested test suites, usually
+  produced by the <code>suite</code> or <code>suite-loader</code>
+  form.  Suites impose hierarchical structure and may carry metadata
+  that potentially influences the test running behavior for the entire
+  group.</dd>
 
   <dt id="term-entity">Entity</dt>
-  <dd>An association list that represents an assertion, test, or
-  suite.  Entities are the first-class runtime objects that flow from
-  definition code to the test runner.  Keys are symbols; their
-  prefixes (<code>assertion/</code>, <code>test/</code>,
+  <dd>An assertion, test, suite or other testing-related entry usually
+  represented as an association list.  Entities are the first-class
+  runtime objects that flow from definition code to the test runner.
+  In case of alist, keys are symbols; their prefixes
+  (<code>assertion/</code>, <code>test/</code>,
   <code>suite/</code>) indicate which kind of entity they belong
   to.</dd>
 
@@ -234,9 +239,8 @@ implementation.  In this section we set up this common glossary.
   a <code>current-test-runner</code> parameter.  The test runner
   receives every message produced by the definition primitives and
   decides how to handle it: for example, by executing an assertion
-  immediately, by
-  collecting a test for deferred execution, or by building a suite
-  hierarchy.  This SRFI specifies the messages a test
+  immediately, by collecting a test for deferred execution, or by
+  building a suite hierarchy.  This SRFI specifies the messages a test
   runner <em>must</em> accept; it does not prescribe execution order,
   concurrency, or reporting strategy.</dd>
 
@@ -244,22 +248,26 @@ implementation.  In this section we set up this common glossary.
   <dd>A procedure that consumes events from a test runner and produces
   human- or machine-readable output (terminal text, JUnit&nbsp;XML,
   TAP, etc.).  Test reporters are outside the scope of this SRFI; they
-  are mentioned here because the test runner interface is designed to
-  make them easy to implement.</dd>
+  are mentioned here because SRFI-269-based testing library
+  implementation experience proved it practical to have a reporter
+  separated from a test runner. It enables one to choose and adjust
+  the output format easily without modifying or reimplementing a test
+  runner.</dd>
 
   <dt id="term-metadata">Metadata</dt>
   <dd>An association list of user-provided key&ndash;value pairs
   attached to a test or suite.  Metadata is opaque to the definition
   API; its interpretation is entirely up to the test runner.  Typical
   uses include tagging tests
-  (e.g.&nbsp;<code>((tags&nbsp;.&nbsp;(integration)))</code>), marking
-  them as slow, or specifying a timeout.</dd>
+  (e.g.&nbsp;<code>((tags&nbsp;.&nbsp;(integration)))</code>),
+  specifying a timeout, or adding fixtures.</dd>
 
   <dt id="term-source-location">Source location</dt>
-  <dd>An entity, which identifies the location of the source code,
-  can be an association list with
+  <dd>An entity, which identifies the location of the source code. Can
+  be an association list with
   keys <code>filename</code>, <code>line</code>,
-  and <code>column</code>.</dd>
+  and <code>column</code> or any other object useful for the specific
+  Scheme implementation.</dd>
 
   <dt id="term-suite-path">Suite path</dt>
   <dd>An ordered list of suite entities representing the chain of
@@ -294,14 +302,13 @@ then applying it to a message.</p>
 <p>If <code>current-test-runner</code> is never set, invoking any
 definition primitive <em>should</em> produce a diagnostic indicating
 that no runner has been configured.  Libraries that provide a test
-runner <em>should</em> call <code>set-default-test-runner!</code> upon
+runner <em>may</em> call <code>set-default-test-runner!</code> upon
 loading so that end users need not configure it manually.</p>
 
 <p>Because <code>current-test-runner</code> is a parameter, it can be
 rebound with <code>parameterize</code> to install a different runner
 for a dynamic extent, which is useful for testing the test framework
-itself or for running tests with alternative reporters.</p>
-
+itself or for running tests with alternative test runner.</p>
 
 <h3 id="is-macro">is &mdash; assertion macro</h3>
 
@@ -309,8 +316,8 @@ itself or for running tests with alternative reporters.</p>
 
 <dl>
   <dt><code>(is <var>expression</var>)</code></dt>
-  <dd>General form.  Asserts that <var>expression</var> evaluates to a
-  true value.</dd>
+  <dd>Generic assertion form.  Asserts that <var>expression</var>
+  evaluates to a truthy value.</dd>
 
   <dt><code>(is <var>expression</var> <var>description</var>)</code></dt>
   <dd>Same, with a human-readable assertion description.</dd>
@@ -353,8 +360,8 @@ source form.</p>
     </tr>
     <tr>
       <td><code>assertion/description</code></td>
-      <td>The human-readable description string, or <code>#f</code> if
-      no description was provided.</td>
+      <td>The human-readable description, or <code>#f</code> if no
+      description was provided.</td>
     </tr>
     <tr>
       <td><code>assertion/location</code></td>
@@ -451,13 +458,11 @@ context value:</p>
 <pre><code>((cdr (assq 'test/body-procedure test)) context)</code></pre>
 
 <p>The context value is supplied by the runner and is an association
-list.  A runner <em>should</em> construct it anew for every invocation of
-a test body procedure.  Context producers, such as fixtures or runner
-middleware, extend a context by constructing a new alist and passing it
-to the next producer or to the test.  They <em>should not</em> modify the
-pairs that form an existing context.  Prepending a new association lets
-a producer add a key or shadow an earlier association without modifying
-the original context.</p>
+list.  A runner <em>should</em> construct it anew for every invocation
+of a test body procedure.  Context producers, such as test fixtures or
+runner middleware, extend a context by constructing a new alist and
+passing it to the next producer or to the test.  They <em>should
+not</em> modify the pairs that form an existing context.</p>
 
 <p>Treating the context structure as immutable does not require its
 values to be immutable.  A context may contain stateful resources such
@@ -474,11 +479,11 @@ intended state.  Because a test runner may execute tests in any order,
 at any point in time, or skip them entirely, relying on unrelated
 external state makes test results unpredictable.</p>
 
-<p>A test entity is not single-use.  A test runner may call its body
+<p>A test entity is not single-use.  A test runner may call test body
 procedure multiple times, possibly with a different context value each
-time.  Every call evaluates the test body anew, so each <code>is</code>
-form constructs and delivers a new assertion entity, and any other
-side effects occur again.</p>
+time.  Every call evaluates the test body anew, so
+each <code>is</code> form constructs and delivers a new assertion
+entity, and any other side effects occur again.</p>
 
 <p><var>description</var> is a string that serves as a human-readable
 label for the test.  The context list is either empty or contains a
@@ -597,12 +602,12 @@ test runner evaluates the suite body, during which any
 enclosed <code>test</code> and <code>suite</code> forms are loaded and
 possibly associated with the context of this suite.</p>
 
-<p><var>description</var> is a string that serves as a human-readable
-label for the suite.  The <var>body</var> forms typically contain
-<code>test</code> forms, and nested <code>suite</code> forms.  It
-should not contain any other code, especially test setup code, as
-tests should be self-contained as they can be executed in arbitrary
-orders and multiple times.</p>
+<p><var>description</var> is a string-valued expression that serves as
+a human-readable label for the suite.  The <var>body</var> forms
+typically contain <code>test</code> forms, and
+nested <code>suite</code> forms.  It should not contain any other
+code, especially test setup code, as tests should be self-contained as
+they can be executed in arbitrary orders and multiple times.</p>
 
 <p>The suite entity contains the following keys:</p>
 
@@ -646,7 +651,10 @@ orders and multiple times.</p>
 <ul>
   <li>Suites <em>must not</em> be nested inside a <code>test</code>.
   Invoking <code>suite</code> inside the body of a <code>test</code>
-  is an error; the test runner <em>should</em> signal it.</li>
+  is an error; the test runner <em>should</em> signal it.  The only
+  exception is if the test runner is overriden inside the test, which
+  means that current hierarchy is reset to the empty one and suite is
+  not "nested" inside the test anymore.</li>
   <li>Suites <em>may</em> be nested inside other suites to arbitrary
   depth.</li>
   <li>Bare <code>is</code> assertions inside a suite but outside of
@@ -677,14 +685,18 @@ is produced.  Code <em>must not</em> rely on the return value.</p>
       (is (string=? "HELLO" (string-upcase "hello"))))
     (test "downcase" ()
       (is (string=? "hello" (string-downcase "HELLO")))))
+
   (suite "splitting"
     (test "split on comma" ()
       (is (equal? '("a" "b" "c")
                   (string-split "a,b,c" #\,))))))
 
 ;; Suite with metadata
-(suite "integration tests" 'metadata '((tags . (integration))
-                                       (slow? . #t))
+(suite "integration tests"
+  'metadata
+  '((tags . (integration))
+    (slow? . #t))
+
   (test "end-to-end round trip" ()
     (is (equal? expected (round-trip input)))))</code></pre>
 

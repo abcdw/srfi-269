@@ -64,3 +64,4 @@
       https://clojuredocs.org/clojure.test/testing
 - [-] Add `test/id`, `suite/id` recommendation to SRFI (Test runner
   scope, a good candidate for a separate SRFI).
+- [ ] Add test/load-time.
