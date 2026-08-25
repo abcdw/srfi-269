@@ -151,7 +151,7 @@ discovery mechanisms can be built.</p>
   <li><strong>Test definition primitives</strong> (normative).  Three
   syntactic forms: <code>is</code>, <code>test</code>,
   and <code>suite</code>, a <code>current-test-runner</code> parameter,
-  the <code>set-current-test-runner!</code> procedure, a small set of
+  the <code>set-default-test-runner!</code> procedure, a small set of
   predicates, and deferred variant <code>suite-loader</code>.</li>
 
   <li><strong>Test runner interface</strong> (normative message
@@ -276,8 +276,8 @@ implementation.  In this section we set up this common glossary.
   <dt><code>(current-test-runner)</code></dt>
   <dd>Returns the current test runner procedure.</dd>
 
-  <dt><code>(set-current-test-runner! <var>runner</var>)</code></dt>
-  <dd>Sets the current test runner to <var>runner</var>.  Subsequent
+  <dt><code>(set-default-test-runner! <var>runner</var>)</code></dt>
+  <dd>Sets the default test runner to <var>runner</var>.  Subsequent
   invocations of the definition primitives use <var>runner</var> unless
   <code>parameterize</code> installs a different runner for a dynamic
   extent.</dd>
@@ -294,7 +294,7 @@ then applying it to a message.</p>
 <p>If <code>current-test-runner</code> is never set, invoking any
 definition primitive <em>should</em> produce a diagnostic indicating
 that no runner has been configured.  Libraries that provide a test
-runner <em>should</em> call <code>set-current-test-runner!</code> upon
+runner <em>should</em> call <code>set-default-test-runner!</code> upon
 loading so that end users need not configure it manually.</p>
 
 <p>Because <code>current-test-runner</code> is a parameter, it can be
@@ -851,7 +851,7 @@ project.  The definitions API is contained in a single module:</p>
   (<code>is</code>, <code>test</code>, <code>suite</code>,
   <code>suite-loader</code>, <code>define-suite</code>,
   <code>current-test-runner</code>,
-  <code>set-current-test-runner!</code>, and predicates).</li>
+  <code>set-default-test-runner!</code>, and predicates).</li>
 </ul>
 
 <p>The implementation depends on <code>syntax-case</code>,
