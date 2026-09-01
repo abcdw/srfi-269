@@ -337,12 +337,13 @@ libraries may re-export it under a name such as <code>check</code>, using
 the implementation's library renaming facilities.</p>
 
 <p>An optional <var>description</var> expression may be supplied as the
-second argument.  It must evaluate to a string.  The description is
-stored in the assertion entity so reporters can present the domain
-meaning of an assertion in addition to, or instead of, the captured
-source form.</p>
+second argument.  It must evaluate to a string.  When supplied, the
+description is stored in the assertion entity so reporters can present
+the domain meaning of an assertion in addition to, or instead of, the
+captured source form.</p>
 
-<p>The assertion entity always contains the following keys:</p>
+<p>The assertion entity contains the following keys.
+The <code>assertion/description</code> key is optional:</p>
 
 <table>
   <thead>
@@ -361,7 +362,7 @@ source form.</p>
     </tr>
     <tr>
       <td><code>assertion/description</code></td>
-      <td>The human-readable description, or <code>#f</code> if no
+      <td>The human-readable description.  This key is omitted if no
       description was provided.</td>
     </tr>
     <tr>
@@ -941,8 +942,8 @@ procedure properties.</p>
 <p>The <code>is</code> macro accepts an arbitrary expression and
 produces a body thunk that evaluates it.  It also accepts an optional
 description expression.  When present, it is evaluated and stored
-under <code>assertion/description</code>; otherwise, <code>#f</code> is
-stored.  The unevaluated source form is captured as a datum.</p>
+under <code>assertion/description</code>; otherwise, the key is omitted.
+The unevaluated source form is captured as a datum.</p>
 
 <p>The <code>test</code> macro parses a description expression
 followed by a argument list.  The list is either empty or contains one
