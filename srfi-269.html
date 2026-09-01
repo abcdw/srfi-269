@@ -770,8 +770,9 @@ definition-time values.  Invoking a suite loader must not modify its
 definition-time metadata, so the same loader can be invoked repeatedly
 with different metadata.  The returned loader should carry the
 information or be registered in some registry to make
-the <code>suite-loader?</code> predicate return <code>#t</code> on
-it.</p>
+the <code>suite-loader?</code> predicate return <code>#t</code> on it.
+This can be later used for discovery of test suites loaders (deferred
+test suites).</p>
 
 <p>When a suite loader is invoked with load-time metadata, the message
 sent to the test runner has the form:</p>
@@ -885,9 +886,10 @@ they are really handy for test runners implementers.
 
   <dt><code>(suite-loader? <var>obj</var>)</code> &rarr; <var>boolean</var></dt>
   <dd>Returns <code>#t</code> if <var>obj</var> is a suite loader
-  produced by <code>suite-loader</code> or <code>define-suite</code>.
-  Implementations can mark suite loaders with a procedure property or
-  somehow else; ordinary lambdas do not satisfy this predicate.</dd>
+  (usually produced by <code>suite-loader</code>
+  or <code>define-suite</code>).  Implementations can mark suite
+  loaders with a procedure property or somehow else; ordinary lambdas
+  do not satisfy this predicate.</dd>
 </dl>
 
 <h2 id="implementation">Implementation</h2>
