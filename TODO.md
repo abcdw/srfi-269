@@ -67,6 +67,6 @@
 - [-] Add test/load-time.
 - [ ] suite/body-thunk or suite/body-procedure?
 - [ ] Add test-loader
-- [ ] Offload merging strategy for (suite-loader metadata) to test runner.
+- [x] Offload merging strategy for (suite-loader metadata) to test runner.
 - [ ] If runner deffered suite/body-procedure, the default runner
       could be changed and nested entries would be loaded into wrong runner.

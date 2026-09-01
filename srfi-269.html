@@ -730,30 +730,40 @@ of <code>suite</code>.  It constructs the same suite entity
 but <em>does not</em> immediately send it to the test runner.
 Instead, it returns a suite loader, a procedure that accepts zero or
 one argument and, when invoked, sends
-the <code>runner/load-suite</code> message.  The optional argument must
-be a metadata alist.  Its entries are placed before the metadata
-provided when the suite loader was defined.  Consequently, alist
-lookup procedures that return the first matching entry observe
-call-time values as taking precedence over definition-time values.
-Invoking a suite loader must not modify its definition-time metadata,
-so the same loader can be invoked repeatedly with different metadata.
-The returned loader should carry the information or be registered in
-some registry to make the <code>suite-loader?</code> predicate
-return <code>#t</code> on it.</p>
+the <code>runner/load-suite</code> message.  The optional argument
+must be a metadata alist.  This load-time metadata is send separately
+under <code>load/metadata</code> key.  Test runner decides on merging
+strategy. Default option is to just prepend suite's metadata with load
+metadata, this way alist lookup procedures that return the first
+matching entry observe load-time values as taking precedence over
+definition-time values.  Invoking a suite loader must not modify its
+definition-time metadata, so the same loader can be invoked repeatedly
+with different metadata.  The returned loader should carry the
+information or be registered in some registry to make
+the <code>suite-loader?</code> predicate return <code>#t</code> on
+it.</p>
 
-<p>The relationship between the two forms is:</p>
+<p>When a suite loader is invoked with load-time metadata, the message
+sent to the test runner has the form:</p>
+
+<pre><code>`((type          . runner/load-suite)
+  (suite         . ,<var>suite-entity</var>)
+  (load/metadata . ,<var>metadata-alist</var>))</code></pre>
+
+<p><code>suite</code> can be implemented via <code>suite-loader</code>:</p>
 
 <pre><code>(suite <var>desc</var> <var>body</var> &hellip;)
 &equiv;
 ((suite-loader <var>desc</var> <var>body</var> &hellip;))</code></pre>
 
-<p>Although <code>is</code> and <code>test</code> forms can appear at
-the top level, test modules <em>should</em> wrap all tests in
+<p>Although while <code>is</code>, <code>suite</code>
+and <code>test</code> forms can be used at the top level, test
+modules <em>should</em> wrap all tests, suites and assertions in
 a <code>suite-loader</code> (or <code>define-suite</code>) so that
 test runners can discover and load them as a unit.  A bare top-level
-<code>test</code> form is loaded as soon as the module is evaluated,
-with no way for a runner to discover it independently or defer its
-execution.</p>
+<code>test</code> and similiar forms are loaded as soon as the module
+is evaluated, with no way for a runner to discover it independently or
+defer its execution.</p>
 
 <p>Suite loaders are the primary building block for composable,
 reusable test suites.  Because they are first-class procedures, they
