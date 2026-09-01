@@ -131,8 +131,8 @@ decisions:</p>
 </ol>
 
 <p>The API surface is deliberately minimal: three definition forms,
-one parameter, one setter procedure, three predicates, and one
-deferred variant.  Yet it covers assertions with rich diagnostics,
+one parameter, one setter procedure, three predicates, and two
+deferred variants.  Yet it covers assertions with rich diagnostics,
 named tests, nested suites, user-provided metadata, and deferred
 composable suite loaders.  This SRFI is intended to supersede SRFI 64
 for the purpose of test definition.  By standardizing what a
@@ -151,7 +151,8 @@ runners, reporters, and discovery mechanisms can be built.</p>
   syntactic forms: <code>is</code>, <code>test</code>,
   and <code>suite</code>, a <code>current-test-runner</code> parameter,
   the <code>set-default-test-runner!</code> procedure, a small set of
-  predicates, and deferred variant <code>suite-loader</code>.</li>
+  predicates, and deferred variants <code>test-loader</code>
+  and <code>suite-loader</code>.</li>
 
   <li><strong>Test runner interface</strong> (normative message
   protocol).  A message-passing protocol that bridges test definitions
@@ -578,6 +579,35 @@ produced.  Code <em>must not</em> rely on the return value.</p>
 (test "list reversal" ()
   (define xs '(1 2 3))
   (is (equal? '(3 2 1) (reverse xs))))</code></pre>
+
+<h3 id="test-loader-form"><code>test-loader</code> &mdash; deferred test definition</h3>
+
+<h4>Syntax</h4>
+
+<dl>
+  <dt><code>(test-loader <var>description</var> <var>context-list</var> <var>body</var> &hellip;)</code></dt>
+  <dt><code>(test-loader <var>description</var> <var>context-list</var> 'metadata <var>metadata-alist</var> <var>body</var> &hellip;)</code></dt>
+  <dd><var>context-list</var> is <code>()</code> or
+  <code>(<var>context</var>)</code>, as for <code>test</code>.</dd>
+</dl>
+
+<h4>Description</h4>
+
+<p><code>test-loader</code> accepts the same arguments and constructs
+the same test entity as <code>test</code>, but returns a loader instead of
+loading it immediately.  The loader accepts zero or one metadata alist
+and sends a <code>runner/load-test</code> message when invoked.
+Load-time metadata is sent separately under <code>load/metadata</code>.</p>
+
+<pre><code>`((type          . runner/load-test)
+  (test          . ,<var>test-entity</var>)
+  (load/metadata . ,<var>metadata-alist</var>))</code></pre>
+
+<p><code>test</code> can be implemented via <code>test-loader</code>:</p>
+
+<pre><code>(test <var>arguments</var> &hellip;)
+&equiv;
+((test-loader <var>arguments</var> &hellip;))</code></pre>
 
 <h3 id="suite-macro"><code>suite</code> &mdash; test suite definition macro</h3>
 
