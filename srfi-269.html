@@ -892,29 +892,51 @@ they are really handy for test runners implementers.
   do not satisfy this predicate.</dd>
 </dl>
 
-<h2 id="implementation">Implementation</h2>
+<h2 id="implementation">Implementations</h2>
 
-<p>A sample implementation is a part of the <code>suitbl</code>
-testing library and provided as part of
-the <a href="https://git.sr.ht/~abcdw/guile-ares-rs">guile-ares-rs</a>
-project.  The definitions API is contained in a single module:</p>
+<h3>Portable Sample Implementation</h3>
+
+<p>A compact sample implementation is provided in the <code>(srfi
+srfi-269)</code> library:</p>
 
 <ul>
-  <li><a href="https://git.sr.ht/~abcdw/guile-ares-rs/tree/master/item/src/guile/ares/suitbl/definitions.scm">definitions.scm</a>
+  <li><a href="https://git.sr.ht/~abcdw/guile-ares-rs/tree/ece546f2/item/src/guile/srfi/srfi-269.scm">srfi-269.scm</a>:
+  an R7RS-style <code>define-library</code> implementation using
+  <code>syntax-rules</code>, including a simple sequential test runner.</li>
+  <li><a href="https://git.sr.ht/~abcdw/guile-ares-rs/tree/ece546f2/item/tests/guile/srfi/srfi-269-test.scm">srfi-269-test.scm</a>:
+  tests for the sample implementation.</li>
+</ul>
+
+<p>The sample implementation uses
+<a href="https://srfi.schemers.org/srfi-229/">SRFI 229</a> tagged
+procedures to identify suite loaders and records source locations
+as <code>#f</code>.  It is intentionally small and includes a basic
+runner suitable for examples and experimentation, it doesn't set
+context, merge load-time, inherit suite metadatas or any other
+advanced functionality.</p>
+
+<h3><code>suitbl</code> &mdash; a full-fledged testing library based
+on SRFI-269</h3>
+
+<p><code>suitbl</code> is provided as part of
+the <a href="https://git.sr.ht/~abcdw/guile-ares-rs">guile-ares-rs</a>
+project.  It has pretty advanced test runner, with customizable
+schedulers, reporters and many other features.  The definitions API is
+SRFI-269 compatible and contained in a single module:</p>
+
+<ul>
+  <li><a href="https://git.sr.ht/~abcdw/guile-ares-rs/tree/ece546f2/item/src/guile/ares/suitbl/definitions.scm">definitions.scm</a>
   &mdash; the complete test definition primitives
   (<code>is</code>, <code>test</code>, <code>suite</code>,
-  <code>suite-loader</code>, <code>define-suite</code>,
-  <code>current-test-runner</code>,
+  <code>test-loader</code>, <code>suite-loader</code>,
+  <code>define-suite</code>, <code>current-test-runner</code>,
   <code>set-default-test-runner!</code>, and predicates).</li>
 </ul>
 
-<p>The implementation depends on <code>syntax-case</code>,
-<code>make-parameter</code>, and association lists.  Entities are
-represented as plain alists rather than records or opaque types, which
-keeps the representation transparent, inspectable, and maximally
-portable across Scheme implementations.</p>
+<p>The implementation depends on <code>syntax-case</code>, and guile's
+procedure properties.</p>
 
-<h3>Design notes</h3>
+<h4>Design notes</h4>
 
 <p>The <code>is</code> macro accepts an arbitrary expression and
 produces a body thunk that evaluates it.  It also accepts an optional
@@ -946,16 +968,17 @@ without modifying either alist.  The returned procedure carries an
 identifying marker that allows the <code>suite-loader?</code> predicate
 to identify it (see portability notes below).</p>
 
-<h3>Portability considerations</h3>
+<h4>Portability considerations</h4>
 
-<p>A small number of Guile-specific features are used in the sample
-implementation.  Each has a straightforward equivalent in other Scheme
-systems:</p>
+<p>A small number of Guile-specific features are used in the
+<code>suitbl</code> definitions implementation.  Each has a
+straightforward equivalent in other Scheme systems:</p>
 
 <dl>
   <dt>Source locations
   (<code>syntax-source</code>, <code>%search-load-path</code>)</dt>
-  <dd>The sample implementation calls Guile's <code>syntax-source</code>
+  <dd>The <code>suitbl</code> implementation calls Guile's
+  <code>syntax-source</code>
   at macro-expansion time to obtain a filename/line/column alist, and
   resolves relative paths via <code>%search-load-path</code>.  Other
   implementations can use their own source-location API (e.g.
@@ -979,7 +1002,7 @@ systems:</p>
   any other mechanism that allows a reliable predicate.</dd>
 </dl>
 
-<h3>Test suite</h3>
+<h4>Test suite</h4>
 
 <p>A test suite for the definitions API is provided:</p>
 
