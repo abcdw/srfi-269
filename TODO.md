@@ -64,3 +64,9 @@
       https://clojuredocs.org/clojure.test/testing
 - [-] Add `test/id`, `suite/id` recommendation to SRFI (Test runner
   scope, a good candidate for a separate SRFI).
+- [-] Add test/load-time.
+- [ ] suite/body-thunk or suite/body-procedure?
+- [x] Add test-loader
+- [x] Offload merging strategy for (suite-loader metadata) to test runner.
+- [ ] If runner deffered suite/body-procedure, the default runner
+      could be changed and nested entries would be loaded into wrong runner.

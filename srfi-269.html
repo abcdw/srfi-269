@@ -131,15 +131,14 @@ decisions:</p>
 </ol>
 
 <p>The API surface is deliberately minimal: three definition forms,
-one parameter, one setter procedure, three predicates, and one deferred
-variant.  Yet it covers assertions with rich diagnostics, named tests,
-nested suites,
-user-provided metadata, and deferred composable suite loaders.  This
-SRFI is intended to supersede SRFI 64 for the purpose of test
-definition.  By standardizing what a test <em>is</em> and leaving how
-it is <em>run</em> to test runners, this SRFI provides a stable
-foundation on which future standards for runners, reporters, and
-discovery mechanisms can be built.</p>
+one parameter, one setter procedure, three predicates, and two
+deferred variants.  Yet it covers assertions with rich diagnostics,
+named tests, nested suites, user-provided metadata, and deferred
+composable suite loaders.  This SRFI is intended to supersede SRFI 64
+for the purpose of test definition.  By standardizing what a
+test <em>is</em> and leaving how it is <em>run</em> to test runners,
+this SRFI provides a stable foundation on which future standards for
+runners, reporters, and discovery mechanisms can be built.</p>
 
 <h2 id="specification">Specification</h2>
 
@@ -151,8 +150,9 @@ discovery mechanisms can be built.</p>
   <li><strong>Test definition primitives</strong> (normative).  Three
   syntactic forms: <code>is</code>, <code>test</code>,
   and <code>suite</code>, a <code>current-test-runner</code> parameter,
-  the <code>set-current-test-runner!</code> procedure, a small set of
-  predicates, and deferred variant <code>suite-loader</code>.</li>
+  the <code>set-default-test-runner!</code> procedure, a small set of
+  predicates, and deferred variants <code>test-loader</code>
+  and <code>suite-loader</code>.</li>
 
   <li><strong>Test runner interface</strong> (normative message
   protocol).  A message-passing protocol that bridges test definitions
@@ -168,11 +168,11 @@ reporting.</p>
 each form constructs a first-class <em>entity</em>, an association
 list (alist), and delivers it to the current test runner via a
 <em>message</em>.  A test entity captures the test body as a
-one-argument procedure, its source location, description string, and
-optional metadata.  The test runner is a procedure stored in
-the <code>current-test-runner</code> parameter; it receives messages as
-alists and is free to execute tests immediately, collect them for
-later, or take any other action.</p>
+one-argument procedure, its description string, optional metadata, and
+its source location when available.  The test runner is a procedure
+stored in the <code>current-test-runner</code> parameter; it receives
+messages as alists and is free to execute tests immediately, collect
+them for later, or take any other action.</p>
 
 <p>This separation is the central design principle: code that
 <em>defines</em> tests is portable across all conforming
@@ -187,36 +187,42 @@ implementation.  In this section we set up this common glossary.
 
 <dl>
   <dt id="term-assertion">Assertion</dt>
-  <dd>A single check produced by the <code>is</code> macro.  An
-  assertion captures an expression (the <em>body</em>), a thunk that
-  evaluates it, and its source location.</dd>
+  <dd>A single check, usually produced by the <code>is</code> macro.
+  An assertion captures an expression (the <em>body</em>), a thunk
+  that evaluates it, and its source location when available.  It also
+  has an optional description to clarify the intent of the assertion
+  when it is not clear from the asserting expression.</dd>
 
   <dt id="term-test">Test</dt>
-  <dd>A named, independently executable unit of testing produced by
-  the <code>test</code> form.  A test groups zero or more assertions
-  together under a human-readable description string.  Tests are the
-  smallest unit that a test runner schedules and reports on.  A test
-  body procedure is a one-argument procedure whose argument is
-  supplied by the runner when the test is executed.</dd>
+  <dd>A named, independently executable unit of testing, usually
+  produced by the <code>test</code> form.  A test groups zero or more
+  assertions together under a human-readable description string.
+  Tests are the smallest unit that a test runner schedules and reports
+  on.  A test body procedure is a one-argument procedure whose
+  argument is supplied by the runner when the test is executed.</dd>
 
   <dt id="term-test-context">Test context</dt>
   <dd>An association list supplied by a test runner to a test body
   procedure.  It is treated as immutable by convention: its pairs are
-  not modified after construction, although its values may be stateful.
-  Typical values include fixture resources, callbacks, runner services,
-  metadata, and other data needed while a test runs.</dd>
+  not modified after construction, although their values may be
+  stateful.  Typical values include resources created by fixtures,
+  callbacks, metadata, and other data needed during a test runs.  The
+  primary goal of text context is to provide an explicit communication
+  channel between fixtures, tests and test runner.</dd>
 
   <dt id="term-test-suite">Test suite</dt>
-  <dd>A named grouping of tests and nested test suites produced by
-  the <code>suite</code> or <code>suite-loader</code> form.  Suites
-  impose hierarchical structure and may carry metadata that influences
-  the test runner's behavior for the entire group.</dd>
+  <dd>A named grouping of tests and nested test suites, usually
+  produced by the <code>suite</code> or <code>suite-loader</code>
+  form.  Suites impose hierarchical structure and may carry metadata
+  that potentially influences the test running behavior for the entire
+  group.</dd>
 
   <dt id="term-entity">Entity</dt>
-  <dd>An association list that represents an assertion, test, or
-  suite.  Entities are the first-class runtime objects that flow from
-  definition code to the test runner.  Keys are symbols; their
-  prefixes (<code>assertion/</code>, <code>test/</code>,
+  <dd>An assertion, test, suite or other testing-related entry usually
+  represented as an association list.  Entities are the first-class
+  runtime objects that flow from definition code to the test runner.
+  In case of alist, keys are symbols; their prefixes
+  (<code>assertion/</code>, <code>test/</code>,
   <code>suite/</code>) indicate which kind of entity they belong
   to.</dd>
 
@@ -234,9 +240,8 @@ implementation.  In this section we set up this common glossary.
   a <code>current-test-runner</code> parameter.  The test runner
   receives every message produced by the definition primitives and
   decides how to handle it: for example, by executing an assertion
-  immediately, by
-  collecting a test for deferred execution, or by building a suite
-  hierarchy.  This SRFI specifies the messages a test
+  immediately, by collecting a test for deferred execution, or by
+  building a suite hierarchy.  This SRFI specifies the messages a test
   runner <em>must</em> accept; it does not prescribe execution order,
   concurrency, or reporting strategy.</dd>
 
@@ -244,22 +249,26 @@ implementation.  In this section we set up this common glossary.
   <dd>A procedure that consumes events from a test runner and produces
   human- or machine-readable output (terminal text, JUnit&nbsp;XML,
   TAP, etc.).  Test reporters are outside the scope of this SRFI; they
-  are mentioned here because the test runner interface is designed to
-  make them easy to implement.</dd>
+  are mentioned here because SRFI-269-based testing library
+  implementation experience proved it practical to have a reporter
+  separated from a test runner. It enables one to choose and adjust
+  the output format easily without modifying or reimplementing a test
+  runner.</dd>
 
   <dt id="term-metadata">Metadata</dt>
   <dd>An association list of user-provided key&ndash;value pairs
   attached to a test or suite.  Metadata is opaque to the definition
   API; its interpretation is entirely up to the test runner.  Typical
   uses include tagging tests
-  (e.g.&nbsp;<code>((tags&nbsp;.&nbsp;(integration)))</code>), marking
-  them as slow, or specifying a timeout.</dd>
+  (e.g.&nbsp;<code>((tags&nbsp;.&nbsp;(integration)))</code>),
+  specifying a timeout, or adding fixtures.</dd>
 
   <dt id="term-source-location">Source location</dt>
-  <dd>An entity, which identifies the location of the source code,
-  can be an association list with
+  <dd>An entity, which identifies the location of the source code. Can
+  be an association list with
   keys <code>filename</code>, <code>line</code>,
-  and <code>column</code>.</dd>
+  and <code>column</code> or any other object useful for the specific
+  Scheme implementation.</dd>
 
   <dt id="term-suite-path">Suite path</dt>
   <dd>An ordered list of suite entities representing the chain of
@@ -276,8 +285,8 @@ implementation.  In this section we set up this common glossary.
   <dt><code>(current-test-runner)</code></dt>
   <dd>Returns the current test runner procedure.</dd>
 
-  <dt><code>(set-current-test-runner! <var>runner</var>)</code></dt>
-  <dd>Sets the current test runner to <var>runner</var>.  Subsequent
+  <dt><code>(set-default-test-runner! <var>runner</var>)</code></dt>
+  <dd>Sets the default test runner to <var>runner</var>.  Subsequent
   invocations of the definition primitives use <var>runner</var> unless
   <code>parameterize</code> installs a different runner for a dynamic
   extent.</dd>
@@ -294,14 +303,13 @@ then applying it to a message.</p>
 <p>If <code>current-test-runner</code> is never set, invoking any
 definition primitive <em>should</em> produce a diagnostic indicating
 that no runner has been configured.  Libraries that provide a test
-runner <em>should</em> call <code>set-current-test-runner!</code> upon
+runner <em>may</em> call <code>set-default-test-runner!</code> upon
 loading so that end users need not configure it manually.</p>
 
 <p>Because <code>current-test-runner</code> is a parameter, it can be
 rebound with <code>parameterize</code> to install a different runner
 for a dynamic extent, which is useful for testing the test framework
-itself or for running tests with alternative reporters.</p>
-
+itself or for running tests with alternative test runner.</p>
 
 <h3 id="is-macro">is &mdash; assertion macro</h3>
 
@@ -309,8 +317,8 @@ itself or for running tests with alternative reporters.</p>
 
 <dl>
   <dt><code>(is <var>expression</var>)</code></dt>
-  <dd>General form.  Asserts that <var>expression</var> evaluates to a
-  true value.</dd>
+  <dd>Generic assertion form.  Asserts that <var>expression</var>
+  evaluates to a truthy value.</dd>
 
   <dt><code>(is <var>expression</var> <var>description</var>)</code></dt>
   <dd>Same, with a human-readable assertion description.</dd>
@@ -329,12 +337,14 @@ libraries may re-export it under a name such as <code>check</code>, using
 the implementation's library renaming facilities.</p>
 
 <p>An optional <var>description</var> expression may be supplied as the
-second argument.  It must evaluate to a string.  The description is
-stored in the assertion entity so reporters can present the domain
-meaning of an assertion in addition to, or instead of, the captured
-source form.</p>
+second argument.  It must evaluate to a string.  When supplied, the
+description is stored in the assertion entity so reporters can present
+the domain meaning of an assertion in addition to, or instead of, the
+captured source form.</p>
 
-<p>The assertion entity always contains the following keys:</p>
+<p>The assertion entity contains the following keys.
+The <code>assertion/description</code> and
+<code>assertion/location</code> keys are optional:</p>
 
 <table>
   <thead>
@@ -353,13 +363,14 @@ source form.</p>
     </tr>
     <tr>
       <td><code>assertion/description</code></td>
-      <td>The human-readable description string, or <code>#f</code> if
-      no description was provided.</td>
+      <td>The human-readable description.  This key is omitted if no
+      description was provided.</td>
     </tr>
     <tr>
       <td><code>assertion/location</code></td>
       <td>An assertion <a href="#term-source-location">source code
-      location</a> </td>
+      location</a>.  This key may be omitted if source-location
+      information is unavailable.</td>
     </tr>
   </tbody>
 </table>
@@ -441,9 +452,9 @@ to reuse the value returned by <code>is</code> forms:</p>
 <p>The <code>test</code> macro defines a single, independently
 executable unit of testing.  It constructs a <em>test entity</em> (an
 alist) that captures the test body as a one-argument procedure, its
-description, metadata, and source location, then immediately delivers
-it to the current test runner by sending a <code>runner/load-test</code>
-message.</p>
+description and metadata, and its source location when available.  It
+then immediately delivers the entity to the current test runner by
+sending a <code>runner/load-test</code> message.</p>
 
 <p>A test runner executes the body procedure by applying it to a
 context value:</p>
@@ -451,13 +462,11 @@ context value:</p>
 <pre><code>((cdr (assq 'test/body-procedure test)) context)</code></pre>
 
 <p>The context value is supplied by the runner and is an association
-list.  A runner <em>should</em> construct it anew for every invocation of
-a test body procedure.  Context producers, such as fixtures or runner
-middleware, extend a context by constructing a new alist and passing it
-to the next producer or to the test.  They <em>should not</em> modify the
-pairs that form an existing context.  Prepending a new association lets
-a producer add a key or shadow an earlier association without modifying
-the original context.</p>
+list.  A runner <em>should</em> construct it anew for every invocation
+of a test body procedure.  Context producers, such as test fixtures or
+runner middleware, extend a context by constructing a new alist and
+passing it to the next producer or to the test.  They <em>should
+not</em> modify the pairs that form an existing context.</p>
 
 <p>Treating the context structure as immutable does not require its
 values to be immutable.  A context may contain stateful resources such
@@ -474,11 +483,11 @@ intended state.  Because a test runner may execute tests in any order,
 at any point in time, or skip them entirely, relying on unrelated
 external state makes test results unpredictable.</p>
 
-<p>A test entity is not single-use.  A test runner may call its body
+<p>A test entity is not single-use.  A test runner may call test body
 procedure multiple times, possibly with a different context value each
-time.  Every call evaluates the test body anew, so each <code>is</code>
-form constructs and delivers a new assertion entity, and any other
-side effects occur again.</p>
+time.  Every call evaluates the test body anew, so
+each <code>is</code> form constructs and delivers a new assertion
+entity, and any other side effects occur again.</p>
 
 <p><var>description</var> is a string that serves as a human-readable
 label for the test.  The context list is either empty or contains a
@@ -490,7 +499,8 @@ typically contain zero or more <code>is</code> assertions, but may
 contain arbitrary Scheme expressions (e.g.&nbsp;local definitions,
 setup code).</p>
 
-<p>The test entity contains the following keys:</p>
+<p>The test entity contains the following keys.
+The <code>test/location</code> key is optional:</p>
 
 <table>
   <thead>
@@ -515,8 +525,9 @@ setup code).</p>
     </tr>
     <tr>
       <td><code>test/location</code></td>
-      <td>A <a href="#term-source-location">source location</a>
-      alist.</td>
+      <td>A <a href="#term-source-location">source location</a>.
+      This key may be omitted if source-location information is
+      unavailable.</td>
     </tr>
   </tbody>
 </table>
@@ -574,6 +585,35 @@ produced.  Code <em>must not</em> rely on the return value.</p>
   (define xs '(1 2 3))
   (is (equal? '(3 2 1) (reverse xs))))</code></pre>
 
+<h3 id="test-loader-form"><code>test-loader</code> &mdash; deferred test definition</h3>
+
+<h4>Syntax</h4>
+
+<dl>
+  <dt><code>(test-loader <var>description</var> <var>context-list</var> <var>body</var> &hellip;)</code></dt>
+  <dt><code>(test-loader <var>description</var> <var>context-list</var> 'metadata <var>metadata-alist</var> <var>body</var> &hellip;)</code></dt>
+  <dd><var>context-list</var> is <code>()</code> or
+  <code>(<var>context</var>)</code>, as for <code>test</code>.</dd>
+</dl>
+
+<h4>Description</h4>
+
+<p><code>test-loader</code> accepts the same arguments and constructs
+the same test entity as <code>test</code>, but returns a loader instead of
+loading it immediately.  The loader accepts zero or one metadata alist
+and sends a <code>runner/load-test</code> message when invoked.
+Load-time metadata is sent separately under <code>load/metadata</code>.</p>
+
+<pre><code>`((type          . runner/load-test)
+  (test          . ,<var>test-entity</var>)
+  (load/metadata . ,<var>metadata-alist</var>))</code></pre>
+
+<p><code>test</code> can be implemented via <code>test-loader</code>:</p>
+
+<pre><code>(test <var>arguments</var> &hellip;)
+&equiv;
+((test-loader <var>arguments</var> &hellip;))</code></pre>
+
 <h3 id="suite-macro"><code>suite</code> &mdash; test suite definition macro</h3>
 
 <h4>Syntax</h4>
@@ -597,14 +637,15 @@ test runner evaluates the suite body, during which any
 enclosed <code>test</code> and <code>suite</code> forms are loaded and
 possibly associated with the context of this suite.</p>
 
-<p><var>description</var> is a string that serves as a human-readable
-label for the suite.  The <var>body</var> forms typically contain
-<code>test</code> forms, and nested <code>suite</code> forms.  It
-should not contain any other code, especially test setup code, as
-tests should be self-contained as they can be executed in arbitrary
-orders and multiple times.</p>
+<p><var>description</var> is a string-valued expression that serves as
+a human-readable label for the suite.  The <var>body</var> forms
+typically contain <code>test</code> forms, and
+nested <code>suite</code> forms.  It should not contain any other
+code, especially test setup code, as tests should be self-contained as
+they can be executed in arbitrary orders and multiple times.</p>
 
-<p>The suite entity contains the following keys:</p>
+<p>The suite entity contains the following keys.
+The <code>suite/location</code> key is optional:</p>
 
 <table>
   <thead>
@@ -630,8 +671,9 @@ orders and multiple times.</p>
     </tr>
     <tr>
       <td><code>suite/location</code></td>
-      <td>A <a href="#term-source-location">source location</a>
-      alist.</td>
+      <td>A <a href="#term-source-location">source location</a>.
+      This key may be omitted if source-location information is
+      unavailable.</td>
     </tr>
   </tbody>
 </table>
@@ -646,7 +688,10 @@ orders and multiple times.</p>
 <ul>
   <li>Suites <em>must not</em> be nested inside a <code>test</code>.
   Invoking <code>suite</code> inside the body of a <code>test</code>
-  is an error; the test runner <em>should</em> signal it.</li>
+  is an error; the test runner <em>should</em> signal it.  The only
+  exception is if the test runner is overriden inside the test, which
+  means that current hierarchy is reset to the empty one and suite is
+  not "nested" inside the test anymore.</li>
   <li>Suites <em>may</em> be nested inside other suites to arbitrary
   depth.</li>
   <li>Bare <code>is</code> assertions inside a suite but outside of
@@ -677,14 +722,18 @@ is produced.  Code <em>must not</em> rely on the return value.</p>
       (is (string=? "HELLO" (string-upcase "hello"))))
     (test "downcase" ()
       (is (string=? "hello" (string-downcase "HELLO")))))
+
   (suite "splitting"
     (test "split on comma" ()
       (is (equal? '("a" "b" "c")
                   (string-split "a,b,c" #\,))))))
 
 ;; Suite with metadata
-(suite "integration tests" 'metadata '((tags . (integration))
-                                       (slow? . #t))
+(suite "integration tests"
+  'metadata
+  '((tags . (integration))
+    (slow? . #t))
+
   (test "end-to-end round trip" ()
     (is (equal? expected (round-trip input)))))</code></pre>
 
@@ -718,30 +767,41 @@ of <code>suite</code>.  It constructs the same suite entity
 but <em>does not</em> immediately send it to the test runner.
 Instead, it returns a suite loader, a procedure that accepts zero or
 one argument and, when invoked, sends
-the <code>runner/load-suite</code> message.  The optional argument must
-be a metadata alist.  Its entries are placed before the metadata
-provided when the suite loader was defined.  Consequently, alist
-lookup procedures that return the first matching entry observe
-call-time values as taking precedence over definition-time values.
-Invoking a suite loader must not modify its definition-time metadata,
-so the same loader can be invoked repeatedly with different metadata.
-The returned loader should carry the information or be registered in
-some registry to make the <code>suite-loader?</code> predicate
-return <code>#t</code> on it.</p>
+the <code>runner/load-suite</code> message.  The optional argument
+must be a metadata alist.  This load-time metadata is send separately
+under <code>load/metadata</code> key.  Test runner decides on merging
+strategy. Default option is to just prepend suite's metadata with load
+metadata, this way alist lookup procedures that return the first
+matching entry observe load-time values as taking precedence over
+definition-time values.  Invoking a suite loader must not modify its
+definition-time metadata, so the same loader can be invoked repeatedly
+with different metadata.  The returned loader should carry the
+information or be registered in some registry to make
+the <code>suite-loader?</code> predicate return <code>#t</code> on it.
+This can be later used for discovery of test suites loaders (deferred
+test suites).</p>
 
-<p>The relationship between the two forms is:</p>
+<p>When a suite loader is invoked with load-time metadata, the message
+sent to the test runner has the form:</p>
+
+<pre><code>`((type          . runner/load-suite)
+  (suite         . ,<var>suite-entity</var>)
+  (load/metadata . ,<var>metadata-alist</var>))</code></pre>
+
+<p><code>suite</code> can be implemented via <code>suite-loader</code>:</p>
 
 <pre><code>(suite <var>desc</var> <var>body</var> &hellip;)
 &equiv;
 ((suite-loader <var>desc</var> <var>body</var> &hellip;))</code></pre>
 
-<p>Although <code>is</code> and <code>test</code> forms can appear at
-the top level, test modules <em>should</em> wrap all tests in
+<p>Although while <code>is</code>, <code>suite</code>
+and <code>test</code> forms can be used at the top level, test
+modules <em>should</em> wrap all tests, suites and assertions in
 a <code>suite-loader</code> (or <code>define-suite</code>) so that
 test runners can discover and load them as a unit.  A bare top-level
-<code>test</code> form is loaded as soon as the module is evaluated,
-with no way for a runner to discover it independently or defer its
-execution.</p>
+<code>test</code> and similiar forms are loaded as soon as the module
+is evaluated, with no way for a runner to discover it independently or
+defer its execution.</p>
 
 <p>Suite loaders are the primary building block for composable,
 reusable test suites.  Because they are first-class procedures, they
@@ -833,50 +893,74 @@ they are really handy for test runners implementers.
 
   <dt><code>(suite-loader? <var>obj</var>)</code> &rarr; <var>boolean</var></dt>
   <dd>Returns <code>#t</code> if <var>obj</var> is a suite loader
-  produced by <code>suite-loader</code> or <code>define-suite</code>.
-  Implementations can mark suite loaders with a procedure property or
-  somehow else; ordinary lambdas do not satisfy this predicate.</dd>
+  (usually produced by <code>suite-loader</code>
+  or <code>define-suite</code>).  Implementations can mark suite
+  loaders with a procedure property or somehow else; ordinary lambdas
+  do not satisfy this predicate.</dd>
 </dl>
 
-<h2 id="implementation">Implementation</h2>
+<h2 id="implementation">Implementations</h2>
 
-<p>A sample implementation is a part of the <code>suitbl</code>
-testing library and provided as part of
-the <a href="https://git.sr.ht/~abcdw/guile-ares-rs">guile-ares-rs</a>
-project.  The definitions API is contained in a single module:</p>
+<h3>Portable Sample Implementation</h3>
+
+<p>A compact sample implementation is provided in the <code>(srfi
+srfi-269)</code> library:</p>
 
 <ul>
-  <li><a href="https://git.sr.ht/~abcdw/guile-ares-rs/tree/master/item/src/guile/ares/suitbl/definitions.scm">definitions.scm</a>
-  &mdash; the complete test definition primitives
-  (<code>is</code>, <code>test</code>, <code>suite</code>,
-  <code>suite-loader</code>, <code>define-suite</code>,
-  <code>current-test-runner</code>,
-  <code>set-current-test-runner!</code>, and predicates).</li>
+  <li><a href="https://git.sr.ht/~abcdw/guile-ares-rs/tree/ece546f2/item/src/guile/srfi/srfi-269.scm">srfi-269.scm</a>:
+  an R7RS-style <code>define-library</code> implementation using
+  <code>syntax-rules</code>, including a simple sequential test runner.</li>
+  <li><a href="https://git.sr.ht/~abcdw/guile-ares-rs/tree/ece546f2/item/tests/guile/srfi/srfi-269-test.scm">srfi-269-test.scm</a>:
+  tests for the sample implementation.</li>
 </ul>
 
-<p>The implementation depends on <code>syntax-case</code>,
-<code>make-parameter</code>, and association lists.  Entities are
-represented as plain alists rather than records or opaque types, which
-keeps the representation transparent, inspectable, and maximally
-portable across Scheme implementations.</p>
+<p>The sample implementation uses
+<a href="https://srfi.schemers.org/srfi-229/">SRFI 229</a> tagged
+procedures to identify suite loaders and records source locations
+as <code>#f</code>.  It is intentionally small and includes a basic
+runner suitable for examples and experimentation, it doesn't set
+context, merge load-time, inherit suite metadatas or any other
+advanced functionality.</p>
 
-<h3>Design notes</h3>
+<h3><code>suitbl</code> &mdash; a full-fledged testing library based
+on SRFI-269</h3>
+
+<p><code>suitbl</code> is provided as part of
+the <a href="https://git.sr.ht/~abcdw/guile-ares-rs">guile-ares-rs</a>
+project.  It has pretty advanced test runner, with customizable
+schedulers, reporters and many other features.  The definitions API is
+SRFI-269 compatible and contained in a single module:</p>
+
+<ul>
+  <li><a href="https://git.sr.ht/~abcdw/guile-ares-rs/tree/ece546f2/item/src/guile/ares/suitbl/definitions.scm">definitions.scm</a>
+  &mdash; the complete test definition primitives
+  (<code>is</code>, <code>test</code>, <code>suite</code>,
+  <code>test-loader</code>, <code>suite-loader</code>,
+  <code>define-suite</code>, <code>current-test-runner</code>,
+  <code>set-default-test-runner!</code>, and predicates).</li>
+</ul>
+
+<p>The implementation depends on <code>syntax-case</code>, and guile's
+procedure properties.</p>
+
+<h4>Implementation Notes</h4>
 
 <p>The <code>is</code> macro accepts an arbitrary expression and
 produces a body thunk that evaluates it.  It also accepts an optional
 description expression.  When present, it is evaluated and stored
-under <code>assertion/description</code>; otherwise, <code>#f</code> is
-stored.  The unevaluated source form is captured as a datum.</p>
+under <code>assertion/description</code>; otherwise, the key is omitted.
+The unevaluated source form is captured as a datum.</p>
 
 <p>The <code>test</code> macro parses a description expression
-followed by a argument list.  The list is either empty or contains one
+followed by an argument list.  The list is either empty or contains one
 <var>context</var> identifier.  The generated
 <code>test/body-procedure</code> always accepts one context value.  If
 an identifier is present, it is used as the formal parameter;
 otherwise, the value is ignored.  The runner can later call that
-procedure with any context value it chooses.</p>
+procedure with any context value it chooses.  It can be a subject
+for future specification of test runner.</p>
 
-<p>The immediate <code>suite</code> form is defined in terms of
+<p>The immediate <code>suite</code> form can be defined in terms of
 <code>suite-loader</code>: <code>suite</code> expands
 to <code>((suite-loader&nbsp;&hellip;))</code>.  The deferred form is
 the primitive; the immediate form simply invokes it.  This factoring
@@ -886,22 +970,23 @@ unit of composition.</p>
 <p>The <code>suite-loader</code> form returns a procedure that accepts
 an optional metadata alist and, when called, sends
 a <code>runner/load-suite</code> message to the current test runner.
-The implementation constructs the effective suite metadata by
-appending the definition-time metadata to the call-time metadata,
-without modifying either alist.  The returned procedure carries an
-identifying marker that allows the <code>suite-loader?</code> predicate
-to identify it (see portability notes below).</p>
+The test runner constructs the effective suite metadata by appending
+the definition-time metadata to the call-time metadata, without
+modifying either alist.  The returned procedure carries an identifying
+marker that allows the <code>suite-loader?</code> predicate to
+identify it (see portability notes below).</p>
 
-<h3>Portability considerations</h3>
+<h4>Portability considerations</h4>
 
-<p>A small number of Guile-specific features are used in the sample
-implementation.  Each has a straightforward equivalent in other Scheme
-systems:</p>
+<p>A small number of Guile-specific features are used in the
+<code>suitbl</code> definitions implementation.  Each has a
+straightforward equivalent in other Scheme systems:</p>
 
 <dl>
   <dt>Source locations
   (<code>syntax-source</code>, <code>%search-load-path</code>)</dt>
-  <dd>The sample implementation calls Guile's <code>syntax-source</code>
+  <dd>The <code>suitbl</code> implementation calls Guile's
+  <code>syntax-source</code>
   at macro-expansion time to obtain a filename/line/column alist, and
   resolves relative paths via <code>%search-load-path</code>.  Other
   implementations can use their own source-location API (e.g.
@@ -909,7 +994,7 @@ systems:</p>
   the <code>source-info</code> facility of the host system).  When no
   source-location API is available, the <code>assertion/location</code>,
   <code>test/location</code>, and <code>suite/location</code> keys
-  may be set to <code>#f</code>.</dd>
+  may be omitted or set to <code>#f</code>.</dd>
 
   <dt>Procedure properties
   (<code>set-procedure-properties!</code>,
@@ -925,13 +1010,18 @@ systems:</p>
   any other mechanism that allows a reliable predicate.</dd>
 </dl>
 
-<h3>Test suite</h3>
+Sample implementation is written in R7RS, it doesn't provide any
+useful location value and uses syntax-rules instead of syntax-case.
 
-<p>A test suite for the definitions API is provided:</p>
+<h4>Test suites</h4>
+
+<p>Test suites for both implementations are provided:</p>
 
 <ul>
-  <li><a href="https://git.sr.ht/~abcdw/guile-ares-rs/tree/master/item/tests/guile/ares/suitbl/definitions-test.scm">definitions-test.scm</a>
-  &mdash; tests that verify the predicates, the entities and messages
+  <li><a href="https://git.sr.ht/~abcdw/guile-ares-rs/tree/ece546f2/item/tests/guile/srfi/srfi-269-test.scm">srfi-269-test.scm</a>
+  &mdash; SRFI-64 tests for the portable sample implementation.</li>
+  <li><a href="https://git.sr.ht/~abcdw/guile-ares-rs/tree/ece546f2/item/tests/guile/ares/suitbl/definitions-test.scm">definitions-test.scm</a>
+  &mdash; SRFI-269 tests that verify the predicates, the entities and messages
   produced by <code>is</code>, <code>test</code>,
   and <code>suite</code>, and the behavior
   of <code>define-suite</code>.  The tests intercept messages via a
@@ -955,10 +1045,10 @@ systems:</p>
 
 <p>The design of this SRFI was influenced
 by <code>clojure.test</code>'s use first-class test entities and
-its <code>is</code> macro, and by JUnit's test primitives.  SRFI 64
-provided the foundation and demonstrated the need for a portable and
-runtime-friendly testing API; this SRFI builds on the lessons learned
-from its adoption.</p>
+its <code>is</code> macro, and by JUnit's test primitives for building
+hierarchies.  SRFI 64 provided the foundation and demonstrated the
+need for a portable and runtime-friendly testing API; this SRFI builds
+on the lessons learned from its adoption.</p>
 
 Thanks to Andrew Kravchuk for showcasing Common Lisp testing
 ecosystem and sharing the experience.
