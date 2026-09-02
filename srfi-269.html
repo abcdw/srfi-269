@@ -59,6 +59,92 @@ loop.</p>
 a message-passing programming interface and test loading and
 execution semantics recommendations for test runner implementers.</p>
 
+<h2 id="toc">Table of contents</h2>
+<ul>
+  <li><a href="#rationale">Rationale</a></li>
+  <li>
+    <a href="#specification">Specification</a>
+    <ul>
+      <li><a href="#overview">Overview</a></li>
+      <li><a href="#terminology">Terminology</a></li>
+      <li><a href="#current-test-runner-parameter">
+  current-test-runner parameter</a></li>
+      <li>
+        <a href="#is-macro">is — assertion macro</a>
+        <ul>
+          <li><a href="#syntax">Syntax</a></li>
+          <li><a href="#description">Description</a></li>
+          <li><a href="#return-value">Return value</a></li>
+          <li><a href="#constraints">Constraints</a></li>
+          <li><a href="#examples">Examples</a></li>
+        </ul>
+      </li>
+      <li>
+        <a href="#test-macro">test — test definition macro</a>
+        <ul>
+          <li><a href="#syntax-2">Syntax</a></li>
+          <li><a href="#description-2">Description</a></li>
+          <li><a href="#constraints-2">Constraints</a></li>
+          <li><a href="#return-value-2">Return value</a></li>
+          <li><a href="#examples-2">Examples</a></li>
+        </ul>
+      </li>
+      <li>
+        <a href="#test-loader-form">test-loader — deferred test definition</a>
+        <ul>
+          <li><a href="#syntax-3">Syntax</a></li>
+          <li><a href="#description-3">Description</a></li>
+        </ul>
+      </li>
+      <li>
+        <a href="#suite-macro">suite — test suite definition macro</a>
+        <ul>
+          <li><a href="#syntax-4">Syntax</a></li>
+          <li><a href="#description-4">Description</a></li>
+          <li><a href="#constraints-3">Constraints</a></li>
+          <li><a href="#return-value-3">Return value</a></li>
+          <li><a href="#examples-3">Examples</a></li>
+        </ul>
+      </li>
+      <li>
+        <a href="#suite-loader-form">suite-loader — deferred suite definition</a>
+        <ul>
+          <li><a href="#syntax-5">Syntax</a></li>
+          <li><a href="#suite-loader-invocation">Suite loader invocation</a></li>
+          <li><a href="#description-5">Description</a></li>
+        </ul>
+      </li>
+      <li>
+        <a href="#define-suite-form">define-suite — named suite definition</a>
+        <ul>
+          <li><a href="#syntax-6">Syntax</a></li>
+          <li><a href="#description-6">Description</a></li>
+          <li><a href="#examples-4">Examples</a></li>
+        </ul>
+      </li>
+      <li><a href="#predicates">Predicates</a></li>
+    </ul>
+  </li>
+  <li>
+    <a href="#implementation">Implementations</a>
+    <ul>
+      <li><a href="#portable-sample-implementation">Portable Sample Implementation</a></li>
+      <li>
+        <a href="#suitbl-mdash-a-full-fledged-testing-library-based-on-srfi-269">suitbl — a full-fledged testing library based
+on SRFI-269</a>
+        <ul>
+          <li><a href="#implementation-notes">Implementation Notes</a></li>
+          <li><a href="#portability-considerations">Portability considerations</a></li>
+          <li><a href="#test-suites">Test suites</a></li>
+        </ul>
+      </li>
+      <li><a href="#supplementary-material">Supplementary material</a></li>
+    </ul>
+  </li>
+  <li><a href="#acknowledgements">Acknowledgements</a></li>
+  <li><a href="#copyright">Copyright</a></li>
+</ul>
+
 <h2 id="rationale">Rationale</h2>
 
 <p>Most of the Scheme libraries and applications benefit from tests,
@@ -313,7 +399,7 @@ itself or for running tests with alternative test runner.</p>
 
 <h3 id="is-macro">is &mdash; assertion macro</h3>
 
-<h4>Syntax</h4>
+<h4 id="syntax">Syntax</h4>
 
 <dl>
   <dt><code>(is <var>expression</var>)</code></dt>
@@ -324,7 +410,7 @@ itself or for running tests with alternative test runner.</p>
   <dd>Same, with a human-readable assertion description.</dd>
 </dl>
 
-<h4>Description</h4>
+<h4 id="description">Description</h4>
 
 <p>The <code>is</code> macro is the sole assertion primitive.  Each
 invocation constructs an <em>assertion entity</em> (an alist) and
@@ -380,7 +466,7 @@ The <code>assertion/description</code> and
 <pre><code>`((type        . runner/run-assertion)
   (assertion   . ,<var>assertion-entity</var>))</code></pre>
 
-<h4>Return value</h4>
+<h4 id="return-value">Return value</h4>
 
 <p>The return value of <code>is</code> is determined by the test
 runner.  A conforming runner <em>should</em> return the value produced
@@ -389,7 +475,7 @@ to reuse the value returned by <code>is</code> forms:</p>
 
 <pre><code>(is (= 7 (is (+ 3 4))))  ; inner is returns 7</code></pre>
 
-<h4>Constraints</h4>
+<h4 id="constraints">Constraints</h4>
 
 <ul>
   <li>When used inside a <code>suite</code> but outside of
@@ -400,7 +486,7 @@ to reuse the value returned by <code>is</code> forms:</p>
   string.</li>
 </ul>
 
-<h4>Examples</h4>
+<h4 id="examples">Examples</h4>
 
 <pre><code>;; Atomic value &mdash; truthy means pass
 (is #t)
@@ -430,7 +516,7 @@ to reuse the value returned by <code>is</code> forms:</p>
 
 <h3 id="test-macro">test &mdash; test definition macro</h3>
 
-<h4>Syntax</h4>
+<h4 id="syntax-2">Syntax</h4>
 
 <dl>
   <dt><code>(test <var>description</var> () <var>body</var> &hellip;)</code></dt>
@@ -447,7 +533,7 @@ to reuse the value returned by <code>is</code> forms:</p>
   <a href="#term-metadata">metadata</a> attached to the test entity.</dd>
 </dl>
 
-<h4>Description</h4>
+<h4 id="description-2">Description</h4>
 
 <p>The <code>test</code> macro defines a single, independently
 executable unit of testing.  It constructs a <em>test entity</em> (an
@@ -537,7 +623,7 @@ The <code>test/location</code> key is optional:</p>
 <pre><code>`((type . runner/load-test)
   (test . ,<var>test-entity</var>))</code></pre>
 
-<h4>Constraints</h4>
+<h4 id="constraints-2">Constraints</h4>
 
 <ul>
   <li>The argument list must be empty or contain exactly one
@@ -554,14 +640,14 @@ The <code>test/location</code> key is optional:</p>
   associates the test with the enclosing suite path.</li>
 </ul>
 
-<h4>Return value</h4>
+<h4 id="return-value-2">Return value</h4>
 
 <p>The return value of <code>test</code> is unspecified.  Because
 <code>test</code> is a <em>loading</em> form that registers a test
 with the runner rather than executing it, no meaningful value is
 produced.  Code <em>must not</em> rely on the return value.</p>
 
-<h4>Examples</h4>
+<h4 id="examples-2">Examples</h4>
 
 <pre><code>;; Minimal test
 (test "addition works" ()
@@ -587,7 +673,7 @@ produced.  Code <em>must not</em> rely on the return value.</p>
 
 <h3 id="test-loader-form"><code>test-loader</code> &mdash; deferred test definition</h3>
 
-<h4>Syntax</h4>
+<h4 id="syntax-3">Syntax</h4>
 
 <dl>
   <dt><code>(test-loader <var>description</var> <var>context-list</var> <var>body</var> &hellip;)</code></dt>
@@ -596,7 +682,7 @@ produced.  Code <em>must not</em> rely on the return value.</p>
   <code>(<var>context</var>)</code>, as for <code>test</code>.</dd>
 </dl>
 
-<h4>Description</h4>
+<h4 id="description-3">Description</h4>
 
 <p><code>test-loader</code> accepts the same arguments and constructs
 the same test entity as <code>test</code>, but returns a loader instead of
@@ -616,7 +702,7 @@ Load-time metadata is sent separately under <code>load/metadata</code>.</p>
 
 <h3 id="suite-macro"><code>suite</code> &mdash; test suite definition macro</h3>
 
-<h4>Syntax</h4>
+<h4 id="syntax-4">Syntax</h4>
 
 <dl>
   <dt><code>(suite <var>description</var> <var>body</var> &hellip;)</code></dt>
@@ -627,7 +713,7 @@ Load-time metadata is sent separately under <code>load/metadata</code>.</p>
   attached to the suite entity.</dd>
 </dl>
 
-<h4>Description</h4>
+<h4 id="description-4">Description</h4>
 
 <p>The <code>suite</code> macro defines a grouping unit that organizes
 tests and nested suites into a hierarchy.  It constructs a <em>suite
@@ -683,7 +769,7 @@ The <code>suite/location</code> key is optional:</p>
 <pre><code>`((type  . runner/load-suite)
   (suite . ,<var>suite-entity</var>))</code></pre>
 
-<h4>Constraints</h4>
+<h4 id="constraints-3">Constraints</h4>
 
 <ul>
   <li>Suites <em>must not</em> be nested inside a <code>test</code>.
@@ -699,14 +785,14 @@ The <code>suite/location</code> key is optional:</p>
   signal it.  Assertions belong inside tests.</li>
 </ul>
 
-<h4>Return value</h4>
+<h4 id="return-value-3">Return value</h4>
 
 <p>The return value of <code>suite</code> is unspecified.  Because
 <code>suite</code> is a <em>loading</em> form that registers a suite
 with the runner rather than executing its tests, no meaningful value
 is produced.  Code <em>must not</em> rely on the return value.</p>
 
-<h4>Examples</h4>
+<h4 id="examples-3">Examples</h4>
 
 <pre><code>;; Flat suite
 (suite "arithmetic"
@@ -740,7 +826,7 @@ is produced.  Code <em>must not</em> rely on the return value.</p>
 
 <h3 id="suite-loader-form"><code>suite-loader</code> &mdash; deferred suite definition</h3>
 
-<h4>Syntax</h4>
+<h4 id="syntax-5">Syntax</h4>
 
 <dl>
   <dt><code>(suite-loader <var>description</var> <var>body</var> &hellip;)</code></dt>
@@ -750,7 +836,7 @@ is produced.  Code <em>must not</em> rely on the return value.</p>
   <dd>Same, with metadata.</dd>
 </dl>
 
-<h4>Suite loader invocation</h4>
+<h4 id="suite-loader-invocation">Suite loader invocation</h4>
 
 <dl>
   <dt><code>(<var>loader</var>)</code></dt>
@@ -760,7 +846,7 @@ is produced.  Code <em>must not</em> rely on the return value.</p>
   <dd>Loads the suite with additional call-time metadata.</dd>
 </dl>
 
-<h4>Description</h4>
+<h4 id="description-5">Description</h4>
 
 <p><code>suite-loader</code> is the deferred counterpart
 of <code>suite</code>.  It constructs the same suite entity
@@ -831,7 +917,7 @@ other suites to include their tests:</p>
 
 <h3 id="define-suite-form"><code>define-suite</code> &mdash; named suite definition</h3>
 
-<h4>Syntax</h4>
+<h4 id="syntax-6">Syntax</h4>
 
 <dl>
   <dt><code>(define-suite (<var>name</var>) <var>body</var> &hellip;)</code></dt>
@@ -842,7 +928,7 @@ other suites to include their tests:</p>
   attached to the underlying suite entity.</dd>
 </dl>
 
-<h4>Description</h4>
+<h4 id="description-6">Description</h4>
 
 <p><code>define-suite</code> is a convenience form that combines
 <code>suite-loader</code> with an ordinary definition.  The suite name
@@ -861,7 +947,7 @@ definition with <code>define</code>.  It is equivalent to:</p>
 converting the symbol to a string.  This form is intended for
 top-level suite definitions in test modules.</p>
 
-<h4>Examples</h4>
+<h4 id="examples-4">Examples</h4>
 
 <pre><code>(define-suite (arithmetic-tests)
   (test "addition" ()
@@ -901,7 +987,7 @@ they are really handy for test runners implementers.
 
 <h2 id="implementation">Implementations</h2>
 
-<h3>Portable Sample Implementation</h3>
+<h3 id="portable-sample-implementation">Portable Sample Implementation</h3>
 
 <p>A compact sample implementation is provided in the <code>(srfi
 srfi-269)</code> library:</p>
@@ -922,7 +1008,7 @@ runner suitable for examples and experimentation, it doesn't set
 context, merge load-time, inherit suite metadatas or any other
 advanced functionality.</p>
 
-<h3><code>suitbl</code> &mdash; a full-fledged testing library based
+<h3 id="suitbl-mdash-a-full-fledged-testing-library-based-on-srfi-269"><code>suitbl</code> &mdash; a full-fledged testing library based
 on SRFI-269</h3>
 
 <p><code>suitbl</code> is provided as part of
@@ -943,7 +1029,7 @@ SRFI-269 compatible and contained in a single module:</p>
 <p>The implementation depends on <code>syntax-case</code>, and guile's
 procedure properties.</p>
 
-<h4>Implementation Notes</h4>
+<h4 id="implementation-notes">Implementation Notes</h4>
 
 <p>The <code>is</code> macro accepts an arbitrary expression and
 produces a body thunk that evaluates it.  It also accepts an optional
@@ -976,7 +1062,7 @@ modifying either alist.  The returned procedure carries an identifying
 marker that allows the <code>suite-loader?</code> predicate to
 identify it (see portability notes below).</p>
 
-<h4>Portability considerations</h4>
+<h4 id="portability-considerations">Portability considerations</h4>
 
 <p>A small number of Guile-specific features are used in the
 <code>suitbl</code> definitions implementation.  Each has a
@@ -1013,7 +1099,7 @@ straightforward equivalent in other Scheme systems:</p>
 Sample implementation is written in R7RS, it doesn't provide any
 useful location value and uses syntax-rules instead of syntax-case.
 
-<h4>Test suites</h4>
+<h4 id="test-suites">Test suites</h4>
 
 <p>Test suites for both implementations are provided:</p>
 
@@ -1029,7 +1115,7 @@ useful location value and uses syntax-rules instead of syntax-case.
   them.</li>
 </ul>
 
-<h3>Supplementary material</h3>
+<h3 id="supplementary-material">Supplementary material</h3>
 
 <ul>
   <li><a href="https://youtu.be/JI7Z6-tndaw">Portable Test
