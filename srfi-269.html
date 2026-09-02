@@ -168,11 +168,11 @@ reporting.</p>
 each form constructs a first-class <em>entity</em>, an association
 list (alist), and delivers it to the current test runner via a
 <em>message</em>.  A test entity captures the test body as a
-one-argument procedure, its source location, description string, and
-optional metadata.  The test runner is a procedure stored in
-the <code>current-test-runner</code> parameter; it receives messages as
-alists and is free to execute tests immediately, collect them for
-later, or take any other action.</p>
+one-argument procedure, its description string, optional metadata, and
+its source location when available.  The test runner is a procedure
+stored in the <code>current-test-runner</code> parameter; it receives
+messages as alists and is free to execute tests immediately, collect
+them for later, or take any other action.</p>
 
 <p>This separation is the central design principle: code that
 <em>defines</em> tests is portable across all conforming
@@ -189,9 +189,9 @@ implementation.  In this section we set up this common glossary.
   <dt id="term-assertion">Assertion</dt>
   <dd>A single check, usually produced by the <code>is</code> macro.
   An assertion captures an expression (the <em>body</em>), a thunk
-  that evaluates it, and its source location. It also has an optional
-  description to clarify the intent of assertion if it's not clear
-  from the asserting expression.</dd>
+  that evaluates it, and its source location when available.  It also
+  has an optional description to clarify the intent of the assertion
+  when it is not clear from the asserting expression.</dd>
 
   <dt id="term-test">Test</dt>
   <dd>A named, independently executable unit of testing, usually
@@ -343,7 +343,8 @@ the domain meaning of an assertion in addition to, or instead of, the
 captured source form.</p>
 
 <p>The assertion entity contains the following keys.
-The <code>assertion/description</code> key is optional:</p>
+The <code>assertion/description</code> and
+<code>assertion/location</code> keys are optional:</p>
 
 <table>
   <thead>
@@ -368,7 +369,8 @@ The <code>assertion/description</code> key is optional:</p>
     <tr>
       <td><code>assertion/location</code></td>
       <td>An assertion <a href="#term-source-location">source code
-      location</a> </td>
+      location</a>.  This key may be omitted if source-location
+      information is unavailable.</td>
     </tr>
   </tbody>
 </table>
@@ -450,9 +452,9 @@ to reuse the value returned by <code>is</code> forms:</p>
 <p>The <code>test</code> macro defines a single, independently
 executable unit of testing.  It constructs a <em>test entity</em> (an
 alist) that captures the test body as a one-argument procedure, its
-description, metadata, and source location, then immediately delivers
-it to the current test runner by sending a <code>runner/load-test</code>
-message.</p>
+description and metadata, and its source location when available.  It
+then immediately delivers the entity to the current test runner by
+sending a <code>runner/load-test</code> message.</p>
 
 <p>A test runner executes the body procedure by applying it to a
 context value:</p>
@@ -497,7 +499,8 @@ typically contain zero or more <code>is</code> assertions, but may
 contain arbitrary Scheme expressions (e.g.&nbsp;local definitions,
 setup code).</p>
 
-<p>The test entity contains the following keys:</p>
+<p>The test entity contains the following keys.
+The <code>test/location</code> key is optional:</p>
 
 <table>
   <thead>
@@ -522,8 +525,9 @@ setup code).</p>
     </tr>
     <tr>
       <td><code>test/location</code></td>
-      <td>A <a href="#term-source-location">source location</a>
-      alist.</td>
+      <td>A <a href="#term-source-location">source location</a>.
+      This key may be omitted if source-location information is
+      unavailable.</td>
     </tr>
   </tbody>
 </table>
@@ -640,7 +644,8 @@ nested <code>suite</code> forms.  It should not contain any other
 code, especially test setup code, as tests should be self-contained as
 they can be executed in arbitrary orders and multiple times.</p>
 
-<p>The suite entity contains the following keys:</p>
+<p>The suite entity contains the following keys.
+The <code>suite/location</code> key is optional:</p>
 
 <table>
   <thead>
@@ -666,8 +671,9 @@ they can be executed in arbitrary orders and multiple times.</p>
     </tr>
     <tr>
       <td><code>suite/location</code></td>
-      <td>A <a href="#term-source-location">source location</a>
-      alist.</td>
+      <td>A <a href="#term-source-location">source location</a>.
+      This key may be omitted if source-location information is
+      unavailable.</td>
     </tr>
   </tbody>
 </table>
@@ -987,7 +993,7 @@ straightforward equivalent in other Scheme systems:</p>
   the <code>source-info</code> facility of the host system).  When no
   source-location API is available, the <code>assertion/location</code>,
   <code>test/location</code>, and <code>suite/location</code> keys
-  may be set to <code>#f</code>.</dd>
+  may be omitted or set to <code>#f</code>.</dd>
 
   <dt>Procedure properties
   (<code>set-procedure-properties!</code>,
