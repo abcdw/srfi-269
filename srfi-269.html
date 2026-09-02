@@ -766,17 +766,17 @@ is produced.  Code <em>must not</em> rely on the return value.</p>
 of <code>suite</code>.  It constructs the same suite entity
 but <em>does not</em> immediately send it to the test runner.
 Instead, it returns a suite loader, a procedure that accepts zero or
-one argument and, when invoked, sends
+one argument that, when invoked, sends
 the <code>runner/load-suite</code> message.  The optional argument
-must be a metadata alist.  This load-time metadata is send separately
-under <code>load/metadata</code> key.  Test runner decides on merging
-strategy. Default option is to just prepend suite's metadata with load
-metadata, this way alist lookup procedures that return the first
+must be a metadata alist.  This load-time metadata is sent separately
+under <code>load/metadata</code> key.  The test runner decides on a merging
+strategy.  The default option is just to prepend the suite's metadata with load
+metadata.  This, way alist lookup procedures that return the first
 matching entry observe load-time values as taking precedence over
 definition-time values.  Invoking a suite loader must not modify its
 definition-time metadata, so the same loader can be invoked repeatedly
 with different metadata.  The returned loader should carry the
-information or be registered in some registry to make
+information, or be registered in some registry to make
 the <code>suite-loader?</code> predicate return <code>#t</code> on it.
 This can be later used for discovery of test suites loaders (deferred
 test suites).</p>
