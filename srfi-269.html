@@ -943,7 +943,7 @@ SRFI-269 compatible and contained in a single module:</p>
 <p>The implementation depends on <code>syntax-case</code>, and guile's
 procedure properties.</p>
 
-<h4>Design notes</h4>
+<h4>Implementation Notes</h4>
 
 <p>The <code>is</code> macro accepts an arbitrary expression and
 produces a body thunk that evaluates it.  It also accepts an optional
@@ -952,14 +952,15 @@ under <code>assertion/description</code>; otherwise, the key is omitted.
 The unevaluated source form is captured as a datum.</p>
 
 <p>The <code>test</code> macro parses a description expression
-followed by a argument list.  The list is either empty or contains one
+followed by an argument list.  The list is either empty or contains one
 <var>context</var> identifier.  The generated
 <code>test/body-procedure</code> always accepts one context value.  If
 an identifier is present, it is used as the formal parameter;
 otherwise, the value is ignored.  The runner can later call that
-procedure with any context value it chooses.</p>
+procedure with any context value it chooses.  It can be a subject
+for future specification of test runner.</p>
 
-<p>The immediate <code>suite</code> form is defined in terms of
+<p>The immediate <code>suite</code> form can be defined in terms of
 <code>suite-loader</code>: <code>suite</code> expands
 to <code>((suite-loader&nbsp;&hellip;))</code>.  The deferred form is
 the primitive; the immediate form simply invokes it.  This factoring
@@ -969,11 +970,11 @@ unit of composition.</p>
 <p>The <code>suite-loader</code> form returns a procedure that accepts
 an optional metadata alist and, when called, sends
 a <code>runner/load-suite</code> message to the current test runner.
-The implementation constructs the effective suite metadata by
-appending the definition-time metadata to the call-time metadata,
-without modifying either alist.  The returned procedure carries an
-identifying marker that allows the <code>suite-loader?</code> predicate
-to identify it (see portability notes below).</p>
+The test runner constructs the effective suite metadata by appending
+the definition-time metadata to the call-time metadata, without
+modifying either alist.  The returned procedure carries an identifying
+marker that allows the <code>suite-loader?</code> predicate to
+identify it (see portability notes below).</p>
 
 <h4>Portability considerations</h4>
 
@@ -1009,13 +1010,18 @@ straightforward equivalent in other Scheme systems:</p>
   any other mechanism that allows a reliable predicate.</dd>
 </dl>
 
-<h4>Test suite</h4>
+Sample implementation is written in R7RS, it doesn't provide any
+useful location value and uses syntax-rules instead of syntax-case.
 
-<p>A test suite for the definitions API is provided:</p>
+<h4>Test suites</h4>
+
+<p>Test suites for both implementations are provided:</p>
 
 <ul>
-  <li><a href="https://git.sr.ht/~abcdw/guile-ares-rs/tree/master/item/tests/guile/ares/suitbl/definitions-test.scm">definitions-test.scm</a>
-  &mdash; tests that verify the predicates, the entities and messages
+  <li><a href="https://git.sr.ht/~abcdw/guile-ares-rs/tree/ece546f2/item/tests/guile/srfi/srfi-269-test.scm">srfi-269-test.scm</a>
+  &mdash; SRFI-64 tests for the portable sample implementation.</li>
+  <li><a href="https://git.sr.ht/~abcdw/guile-ares-rs/tree/ece546f2/item/tests/guile/ares/suitbl/definitions-test.scm">definitions-test.scm</a>
+  &mdash; SRFI-269 tests that verify the predicates, the entities and messages
   produced by <code>is</code>, <code>test</code>,
   and <code>suite</code>, and the behavior
   of <code>define-suite</code>.  The tests intercept messages via a
@@ -1039,10 +1045,10 @@ straightforward equivalent in other Scheme systems:</p>
 
 <p>The design of this SRFI was influenced
 by <code>clojure.test</code>'s use first-class test entities and
-its <code>is</code> macro, and by JUnit's test primitives.  SRFI 64
-provided the foundation and demonstrated the need for a portable and
-runtime-friendly testing API; this SRFI builds on the lessons learned
-from its adoption.</p>
+its <code>is</code> macro, and by JUnit's test primitives for building
+hierarchies.  SRFI 64 provided the foundation and demonstrated the
+need for a portable and runtime-friendly testing API; this SRFI builds
+on the lessons learned from its adoption.</p>
 
 Thanks to Andrew Kravchuk for showcasing Common Lisp testing
 ecosystem and sharing the experience.
