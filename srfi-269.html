@@ -18,7 +18,7 @@ SPDX-License-Identifier: MIT
     src="https://srfi.schemers.org/srfi-logo.svg" alt="SRFI surfboard
     logo" /></a>SRFI 269: Portable Test Definitions</h1>
 
-<p>by Andrew Tropin, Ramin Honary</p>
+<p>by <a href="https://trop.in/">Andrew Tropin</a>, Ramin Honary</p>
 
 <h2 id="status">Status</h2>
 
@@ -994,10 +994,10 @@ they are really handy for test runners implementers.
 srfi-269)</code> library:</p>
 
 <ul>
-  <li><a href="https://git.sr.ht/~abcdw/guile-ares-rs/tree/ece546f2/item/src/guile/srfi/srfi-269.scm">srfi-269.scm</a>:
+  <li><a href="https://git.sr.ht/~abcdw/guile-ares-rs/tree/64f09262/item/src/guile/srfi/srfi-269.scm">srfi-269.scm</a>:
   an R7RS-style <code>define-library</code> implementation using
   <code>syntax-rules</code>, including a simple sequential test runner.</li>
-  <li><a href="https://git.sr.ht/~abcdw/guile-ares-rs/tree/ece546f2/item/tests/guile/srfi/srfi-269-test.scm">srfi-269-test.scm</a>:
+  <li><a href="https://git.sr.ht/~abcdw/guile-ares-rs/tree/64f09262/item/tests/guile/srfi/srfi-269-test.scm">srfi-269-test.scm</a>:
   tests for the sample implementation.</li>
 </ul>
 
@@ -1019,7 +1019,7 @@ schedulers, reporters and many other features.  The definitions API is
 SRFI-269 compatible and contained in a single module:</p>
 
 <ul>
-  <li><a href="https://git.sr.ht/~abcdw/guile-ares-rs/tree/ece546f2/item/src/guile/ares/suitbl/definitions.scm">definitions.scm</a>
+  <li><a href="https://git.sr.ht/~abcdw/guile-ares-rs/tree/64f09262/item/src/guile/ares/suitbl/definitions.scm">definitions.scm</a>
   &mdash; the complete test definition primitives
   (<code>is</code>, <code>test</code>, <code>suite</code>,
   <code>test-loader</code>, <code>suite-loader</code>,
@@ -1037,6 +1037,18 @@ produces a body thunk that evaluates it.  It also accepts an optional
 description expression.  When present, it is evaluated and stored
 under <code>assertion/description</code>; otherwise, the key is omitted.
 The unevaluated source form is captured as a datum.</p>
+
+<p><strong>Warning:</strong> Do not recognize the
+<code>'metadata</code> marker by treating <code>quote</code> or
+<code>metadata</code> as hygienic pattern literals.  Lexical bindings
+with either name at the macro use site can prevent the marker from
+matching.  Instead, compare the marker's source datum structurally with
+<code>(quote metadata)</code>.  A <code>syntax-case</code>
+implementation can compare <code>(syntax-&gt;datum marker)</code> with
+that datum.  A <code>syntax-rules</code> implementation can capture the
+two marker components as pattern variables, compare their quoted datum
+with an auxiliary predicate, and retain the candidate as the first body
+form when it is not the marker.</p>
 
 <p>The <code>test</code> macro parses a description expression
 followed by an argument list.  The list is either empty or contains one
@@ -1105,9 +1117,9 @@ useful location value and uses syntax-rules instead of syntax-case.
 <p>Test suites for both implementations are provided:</p>
 
 <ul>
-  <li><a href="https://git.sr.ht/~abcdw/guile-ares-rs/tree/ece546f2/item/tests/guile/srfi/srfi-269-test.scm">srfi-269-test.scm</a>
+  <li><a href="https://git.sr.ht/~abcdw/guile-ares-rs/tree/64f09262/item/tests/guile/srfi/srfi-269-test.scm">srfi-269-test.scm</a>
   &mdash; SRFI-64 tests for the portable sample implementation.</li>
-  <li><a href="https://git.sr.ht/~abcdw/guile-ares-rs/tree/ece546f2/item/tests/guile/ares/suitbl/definitions-test.scm">definitions-test.scm</a>
+  <li><a href="https://git.sr.ht/~abcdw/guile-ares-rs/tree/64f09262/item/tests/guile/ares/suitbl/definitions-test.scm">definitions-test.scm</a>
   &mdash; SRFI-269 tests that verify the predicates, the entities and messages
   produced by <code>is</code>, <code>test</code>,
   and <code>suite</code>, and the behavior
@@ -1137,11 +1149,14 @@ hierarchies.  SRFI 64 provided the foundation and demonstrated the
 need for a portable and runtime-friendly testing API; this SRFI builds
 on the lessons learned from its adoption.</p>
 
-Thanks to Andrew Kravchuk for showcasing Common Lisp testing
-ecosystem and sharing the experience.
+<p>Thanks to Andrew Kravchuk for showcasing Common Lisp testing
+ecosystem and sharing the experience.</p>
 
-Thanks to NLnet for funding the work on the <code>suitbl</code>
-testing library and this specification.
+<p>Thanks to Daphne Preston-Kendal for providing valuable feedback and identifying
+several significant bugs and misimplementations.</p>
+
+<p>Thanks to <a href="https://nlnet.nl/">NLnet</a> for funding the work
+on the <code>suitbl</code> testing library and this specification.</p>
 
 <h2 id="copyright">Copyright</h2>
 <p>&copy; 2025, 2026 Andrew Tropin, Ramin Honary.</p>
