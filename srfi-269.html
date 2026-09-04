@@ -1038,6 +1038,18 @@ description expression.  When present, it is evaluated and stored
 under <code>assertion/description</code>; otherwise, the key is omitted.
 The unevaluated source form is captured as a datum.</p>
 
+<p><strong>Warning:</strong> Do not recognize the
+<code>'metadata</code> marker by treating <code>quote</code> or
+<code>metadata</code> as hygienic pattern literals.  Lexical bindings
+with either name at the macro use site can prevent the marker from
+matching.  Instead, compare the marker's source datum structurally with
+<code>(quote metadata)</code>.  A <code>syntax-case</code>
+implementation can compare <code>(syntax-&gt;datum marker)</code> with
+that datum.  A <code>syntax-rules</code> implementation can capture the
+two marker components as pattern variables, compare their quoted datum
+with an auxiliary predicate, and retain the candidate as the first body
+form when it is not the marker.</p>
+
 <p>The <code>test</code> macro parses a description expression
 followed by an argument list.  The list is either empty or contains one
 <var>context</var> identifier.  The generated
