@@ -27,7 +27,7 @@
 
 - [ ] Add test-loader and define-suite to normative API?
 - [x] Description in paranthesis together with context is confusing
-- [-] Wrap metadata in parenthesis
+- [x] Wrap metadata in parenthesis
 - [ ] Add runner/run-tests message or define reccomendation for running
 - [ ] Do we need to discover all tests or only exported?
 - [x] Make context optional for test. An empty context list ignores context.

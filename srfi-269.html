@@ -528,8 +528,8 @@ to reuse the value returned by <code>is</code> forms:</p>
   <dd>Defines and immediately loads a test.  The
   identifier <var>context</var> is bound in the test body.</dd>
 
-  <dt><code>(test <var>description</var> () 'metadata <var>metadata-alist</var> <var>body</var> &hellip;)</code></dt>
-  <dt><code>(test <var>description</var> (<var>context</var>) 'metadata <var>metadata-alist</var> <var>body</var> &hellip;)</code></dt>
+  <dt><code>(test <var>description</var> () (metadata <var>metadata-alist</var>) <var>body</var> &hellip;)</code></dt>
+  <dt><code>(test <var>description</var> (<var>context</var>) (metadata <var>metadata-alist</var>) <var>body</var> &hellip;)</code></dt>
   <dd>Same forms, with user-provided
   <a href="#term-metadata">metadata</a> attached to the test entity.</dd>
 </dl>
@@ -661,9 +661,9 @@ produced.  Code <em>must not</em> rely on the return value.</p>
 
 ;; Test using context and metadata
 (test "database round-trip" (ctx)
-  'metadata
-  '((tags . (integration))
-    (timeout . 30))
+  (metadata
+   `((tags . (integration))
+     (timeout . 30)))
   (define db (cdr (assq 'db ctx)))
   (is (equal? sample-record (db-read db (db-write db sample-record)))))
 
@@ -678,7 +678,7 @@ produced.  Code <em>must not</em> rely on the return value.</p>
 
 <dl>
   <dt><code>(test-loader <var>description</var> <var>context-list</var> <var>body</var> &hellip;)</code></dt>
-  <dt><code>(test-loader <var>description</var> <var>context-list</var> 'metadata <var>metadata-alist</var> <var>body</var> &hellip;)</code></dt>
+  <dt><code>(test-loader <var>description</var> <var>context-list</var> (metadata <var>metadata-alist</var>) <var>body</var> &hellip;)</code></dt>
   <dd><var>context-list</var> is <code>()</code> or
   <code>(<var>context</var>)</code>, as for <code>test</code>.</dd>
 </dl>
@@ -709,7 +709,7 @@ Load-time metadata is sent separately under <code>load/metadata</code>.</p>
   <dt><code>(suite <var>description</var> <var>body</var> &hellip;)</code></dt>
   <dd>Defines and immediately loads a test suite.</dd>
 
-  <dt><code>(suite <var>description</var> 'metadata <var>metadata-alist</var> <var>body</var> &hellip;)</code></dt>
+  <dt><code>(suite <var>description</var> (metadata <var>metadata-alist</var>) <var>body</var> &hellip;)</code></dt>
   <dd>Same, with user-provided <a href="#term-metadata">metadata</a>
   attached to the suite entity.</dd>
 </dl>
@@ -817,9 +817,9 @@ is produced.  Code <em>must not</em> rely on the return value.</p>
 
 ;; Suite with metadata
 (suite "integration tests"
-  'metadata
-  '((tags . (integration))
-    (slow? . #t))
+  (metadata
+   `((tags . (integration))
+     (slow? . #t)))
 
   (test "end-to-end round trip" ()
     (is (equal? expected (round-trip input)))))</code></pre>
@@ -833,7 +833,7 @@ is produced.  Code <em>must not</em> rely on the return value.</p>
   <dt><code>(suite-loader <var>description</var> <var>body</var> &hellip;)</code></dt>
   <dd>Returns a suite loader that, when called, loads the suite.</dd>
 
-  <dt><code>(suite-loader <var>description</var> 'metadata <var>metadata-alist</var> <var>body</var> &hellip;)</code></dt>
+  <dt><code>(suite-loader <var>description</var> (metadata <var>metadata-alist</var>) <var>body</var> &hellip;)</code></dt>
   <dd>Same, with metadata.</dd>
 </dl>
 
@@ -924,7 +924,7 @@ other suites to include their tests:</p>
   <dt><code>(define-suite (<var>name</var>) <var>body</var> &hellip;)</code></dt>
   <dd>Defines a suite loader bound to <var>name</var>.</dd>
 
-  <dt><code>(define-suite (<var>name</var>) 'metadata <var>metadata-alist</var> <var>body</var> &hellip;)</code></dt>
+  <dt><code>(define-suite (<var>name</var>) (metadata <var>metadata-alist</var>) <var>body</var> &hellip;)</code></dt>
   <dd>Same, with user-provided <a href="#term-metadata">metadata</a>
   attached to the underlying suite entity.</dd>
 </dl>
@@ -942,7 +942,7 @@ definition with <code>define</code>.  It is equivalent to:</p>
 <p>Or, with metadata:</p>
 
 <pre><code>(define <var>name</var>
-  (suite-loader (symbol->string '<var>name</var>) 'metadata <var>metadata-alist</var> <var>body</var> &hellip;))</code></pre>
+  (suite-loader (symbol->string '<var>name</var>) (metadata <var>metadata-alist</var>) <var>body</var> &hellip;))</code></pre>
 
 <p>The suite description string is derived from <var>name</var> by
 converting the symbol to a string.  This form is intended for
@@ -1037,18 +1037,6 @@ produces a body thunk that evaluates it.  It also accepts an optional
 description expression.  When present, it is evaluated and stored
 under <code>assertion/description</code>; otherwise, the key is omitted.
 The unevaluated source form is captured as a datum.</p>
-
-<p><strong>Warning:</strong> Do not recognize the
-<code>'metadata</code> marker by treating <code>quote</code> or
-<code>metadata</code> as hygienic pattern literals.  Lexical bindings
-with either name at the macro use site can prevent the marker from
-matching.  Instead, compare the marker's source datum structurally with
-<code>(quote metadata)</code>.  A <code>syntax-case</code>
-implementation can compare <code>(syntax-&gt;datum marker)</code> with
-that datum.  A <code>syntax-rules</code> implementation can capture the
-two marker components as pattern variables, compare their quoted datum
-with an auxiliary predicate, and retain the candidate as the first body
-form when it is not the marker.</p>
 
 <p>The <code>test</code> macro parses a description expression
 followed by an argument list.  The list is either empty or contains one
