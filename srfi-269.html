@@ -36,13 +36,14 @@ SPDX-License-Identifier: MIT
 
 <p>This SRFI defines a portable API for test definitions that is
 decoupled from test execution and reporting.  It provides four
-syntactic forms: the universal <code>is</code> macro for assertions,
+definition forms: the universal <code>is</code> macro for assertions,
 <code>testing</code> for giving groups of assertions human-readable
 context, <code>test</code> for grouping assertions into independently
 executable units, and <code>suite</code> for organizing tests into
-hierarchies.  Tests and suites can carry user-provided
-metadata to adjust the behavior of a test runner, for example to
-select tests by tags or to enforce timeout values.  The API is tiny,
+hierarchies.  The exported <code>metadata</code> auxiliary syntax
+attaches user-provided information to tests and suites to adjust the
+behavior of a test runner, for example to select tests by tags or to
+enforce timeout values.  The API is tiny,
 yet capable and flexible.  By focusing on the definition and leaving
 execution semantics to test runners, this SRFI offers a common ground
 that can reduce fragmentation among testing libraries.</p>
@@ -91,6 +92,7 @@ execution semantics recommendations for test runner implementers.</p>
           <li><a href="#testing-examples">Examples</a></li>
         </ul>
       </li>
+      <li><a href="#metadata-syntax"><code>metadata</code> - auxiliary syntax</a></li>
       <li>
         <a href="#test-macro">test — test definition macro</a>
         <ul>
@@ -231,8 +233,9 @@ decisions:</p>
 </ol>
 
 <p>The API surface is deliberately minimal: four definition forms,
-one parameter, one setter procedure, three predicates, and two
-deferred variants.  Yet it covers assertions with rich diagnostics,
+one auxiliary syntax, one parameter, one setter procedure, three
+predicates, and two deferred variants.  Yet it covers assertions with
+rich diagnostics,
 named tests, nested suites, user-provided metadata, and deferred
 composable suite loaders.  This SRFI is intended to supersede SRFI 64
 for the purpose of test definition.  By standardizing what a
@@ -248,11 +251,12 @@ runners, reporters, and discovery mechanisms can be built.</p>
 
 <ol>
   <li><strong>Test definition primitives</strong> (normative).  Four
-  syntactic forms: <code>is</code>, <code>testing</code>,
-  <code>test</code>, and <code>suite</code>, a
-  <code>current-test-runner</code> parameter,
-  the <code>set-default-test-runner!</code> procedure, a small set of
-  predicates, and deferred variants <code>test-loader</code>
+  definition forms: <code>is</code>, <code>testing</code>,
+  <code>test</code>, and <code>suite</code>; the exported
+  <code>metadata</code> auxiliary syntax; a
+  <code>current-test-runner</code> parameter;
+  the <code>set-default-test-runner!</code> procedure; a small set of
+  predicates; and deferred variants <code>test-loader</code>
   and <code>suite-loader</code>.</li>
 
   <li><strong>Test runner interface</strong> (normative message
@@ -649,6 +653,33 @@ of the outer assertion body.</p>
 (testing "parser smoke check"
   (is (parseable? sample))
   (is (valid? (parse sample))))</code></pre>
+
+<h3 id="metadata-syntax"><code>metadata</code> - auxiliary syntax</h3>
+
+<h4>Syntax</h4>
+
+<dl>
+  <dt><code>(metadata <var>metadata-alist</var>)</code></dt>
+  <dd>Attaches definition-time metadata to a test or suite entity.</dd>
+</dl>
+
+<h4>Description</h4>
+
+<p><code>metadata</code> is an auxiliary syntax keyword recognized by
+<code>test</code>, <code>test-loader</code>, <code>suite</code>,
+<code>suite-loader</code>, and <code>define-suite</code>.  A conforming
+library must export <code>metadata</code> along with those forms.  It may
+be renamed with the implementation's library import facilities; the
+enclosing form must recognize the renamed binding in the same way as
+the original name.</p>
+
+<p>A metadata clause may appear only in the positions shown in the
+syntax of the enclosing forms.  It is not an expression and has no
+standalone meaning.  <var>metadata-alist</var> is an expression that must
+evaluate to an association list.  It is evaluated exactly once when
+the enclosing form constructs its test or suite entity, and the
+resulting value is stored under <code>test/metadata</code> or
+<code>suite/metadata</code>, respectively.</p>
 
 
 <h3 id="test-macro">test &mdash; test definition macro</h3>
@@ -1163,8 +1194,8 @@ SRFI-269 compatible and contained in a single module:</p>
 <ul>
   <li><a href="https://git.sr.ht/~abcdw/guile-ares-rs/tree/64f09262/item/src/guile/ares/suitbl/definitions.scm">definitions.scm</a>
   &mdash; the complete test definition primitives
-  (<code>is</code>, <code>test</code>, <code>suite</code>,
-  <code>test-loader</code>, <code>suite-loader</code>,
+  (<code>is</code>, <code>metadata</code>, <code>test</code>,
+  <code>suite</code>, <code>test-loader</code>, <code>suite-loader</code>,
   <code>define-suite</code>, <code>current-test-runner</code>,
   <code>set-default-test-runner!</code>, and predicates).</li>
 </ul>

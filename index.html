@@ -51,13 +51,14 @@
               <div class="title">Unsubscribe from srfi-269 mailing list</div><input name="email" placeholder="email address" tabindex="5" type="email"><input class="submit" name="submit" tabindex="6" type="submit" value="Unsubscribe from srfi-269"><input type="hidden" name="action" value="unsubscribe"><input name="list" type="hidden" value="srfi-269@srfi.schemers.org"></form></span></li></ul>
       <h2>Abstract</h2><p>This SRFI defines a portable API for test definitions that is
  decoupled from test execution and reporting.  It provides four
- syntactic forms: the universal <code>is</code> macro for assertions,
+ definition forms: the universal <code>is</code> macro for assertions,
  <code>testing</code> for giving groups of assertions human-readable
  context, <code>test</code> for grouping assertions into independently
  executable units, and <code>suite</code> for organizing tests into
- hierarchies.  Tests and suites can carry user-provided
- metadata to adjust the behavior of a test runner, for example to
- select tests by tags or to enforce timeout values.  The API is tiny,
+ hierarchies.  The exported <code>metadata</code> auxiliary syntax
+ attaches user-provided information to tests and suites to adjust the
+ behavior of a test runner, for example to select tests by tags or to
+ enforce timeout values.  The API is tiny,
  yet capable and flexible.  By focusing on the definition and leaving
  execution semantics to test runners, this SRFI offers a common ground
  that can reduce fragmentation among testing libraries.</p>
